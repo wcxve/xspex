@@ -398,9 +398,9 @@ namespace xspex {
     void wrapper_C_XLA_f32(void *out, void **in) {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
-        const string initStr = *reinterpret_cast<string *>(in[4]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto pars_ = std::vector<double>(NumPars);
@@ -421,9 +421,9 @@ namespace xspex {
     void wrapper_C_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
-        const string initStr = *reinterpret_cast<string *>(in[4]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto errors = std::vector<double>(nelem);
@@ -436,8 +436,8 @@ namespace xspex {
     void wrapper_f_XLA_f32(void *out, void **in) {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto errors = std::vector<float>(nelem);
@@ -448,8 +448,8 @@ namespace xspex {
     void wrapper_f_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto pars_ = std::vector<float>(NumPars);
@@ -472,8 +472,8 @@ namespace xspex {
     void wrapper_F_XLA_f32(void *out, void **in) {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto pars_ = std::vector<double>(NumPars);
@@ -494,8 +494,8 @@ namespace xspex {
     void wrapper_F_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
-        const int nelem = *reinterpret_cast<int *>(in[2]);
-        const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
+        const int nelem = *reinterpret_cast<int *>(in[3]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto errors = std::vector<double>(nelem);
@@ -509,9 +509,9 @@ namespace xspex {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
         float *mptr = reinterpret_cast<float *>(in[2]);
-        const int nelem = *reinterpret_cast<int *>(in[3]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
-        const string initStr = *reinterpret_cast<string *>(in[4]);
+        const int nelem = *reinterpret_cast<int *>(in[4]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto pars_ = std::vector<double>(NumPars);
@@ -534,9 +534,9 @@ namespace xspex {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
         double *mptr = reinterpret_cast<double *>(in[2]);
-        const int nelem = *reinterpret_cast<int *>(in[3]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
-        const string initStr = *reinterpret_cast<string *>(in[4]);
+        const int nelem = *reinterpret_cast<int *>(in[4]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto model_ = std::vector<double>(nelem);
@@ -556,8 +556,8 @@ namespace xspex {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
         float *mptr = reinterpret_cast<float *>(in[2]);
-        const int nelem = *reinterpret_cast<int *>(in[3]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int nelem = *reinterpret_cast<int *>(in[4]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto model_ = std::vector<float>(nelem);
@@ -575,8 +575,8 @@ namespace xspex {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
         double *mptr = reinterpret_cast<double *>(in[2]);
-        const int nelem = *reinterpret_cast<int *>(in[3]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
+        const int nelem = *reinterpret_cast<int *>(in[4]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto pars_ = std::vector<float>(NumPars);
