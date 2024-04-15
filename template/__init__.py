@@ -1,0 +1,192 @@
+from dataclasses import dataclass
+from enum import Enum, auto
+import logging
+from typing import List, Optional, Sequence
+
+try:
+    from ._compiled import *
+    __version__ = _compiled.__version__
+except ImportError as ie:
+    # Allow the actual error message to be reported if the user
+    # has tweaked the log level, for instance with:
+    #
+    #   import logging; logging.basicConfig(level=logging.DEBUG)
+    #
+    logging.getLogger(__name__).warn("Unable to import compiled Xspec models")
+    logging.getLogger(__name__).info(str(ie))
+
+    __version__ = "none"
+
+_compiled._init()
+
+
+class ModelType(Enum):
+    """The various Xspec model types."""
+
+    Add = auto()
+    Mul = auto()
+    Con = auto()
+
+
+class LanguageStyle(Enum):
+    """The various ways to define and call Xspec models."""
+
+    CppStyle8 = auto()
+    CStyle8 = auto()
+    F77Style4 = auto()
+    F77Style8 = auto()
+
+
+class ParamType(Enum):
+    """The Xspec parameter type."""
+
+    Default = auto()
+    Switch = auto()
+    Scale = auto()
+    Periodic = auto()
+
+
+@dataclass
+class XspecParameter:
+    """An Xspec parameter."""
+
+    paramtype: ParamType
+    name: str
+    default: float
+    units: Optional[str] = None
+    frozen: bool = False
+    # Would it be better to just have limits = [hardmin, softmni, softmax, hardmax]?
+    softmin: Optional[float] = None
+    softmax: Optional[float] = None
+    hardmin: Optional[float] = None
+    hardmax: Optional[float] = None
+    delta: Optional[float] = None
+
+
+@dataclass
+class XspecModel:
+    """An Xspec model."""
+
+    modeltype: ModelType
+    name: str
+    funcname: str
+    language: LanguageStyle
+    elo: float
+    ehi: float
+    parameters: Sequence[XspecParameter]
+    use_errors: bool = False
+    can_cache: bool = True
+
+
+_info = {
+##PYINFO##
+}
+
+
+def info(model: str) -> XspecModel:
+    """Return information on the Xspec model from the model.dat file.
+
+    This returns the information on the model as taken from the Xspec
+    model library used to build this model.
+
+    Parameters
+    ----------
+    name : str
+        The Xspec model name (case-insensitive).
+
+    Returns
+    -------
+    model : XspecModel
+        The dataclass that describes the mode;.
+
+    See Also
+    --------
+    list_models
+
+    Examples
+    --------
+
+    >>> m = info('apec')
+    >>> m.name
+    'apec'
+    >>> m.modeltype
+    <ModelType.Add: 1>
+    >>> [(p.name, p.default, p.units) for p in m.parameters]
+    [('kT', 1.0, 'keV'), ('Abundanc', 1.0, None), ('Redshift', 0.0, None)]
+
+    """
+
+    # We want case-insensitive comparison but for the keys to retain
+    # their case. Using casefold() rather than lower() is a bit OTT
+    # here as I would bet model.dat is meant to be US-ASCII.
+    check = model.casefold()
+    out = next((v for k, v in _info.items() if k.casefold() == check),
+               None)
+    if out is None:
+        raise ValueError(f"Unrecognized Xspec model '{model}'")
+
+    return out
+
+
+# Do we need Optional here?
+def list_models(modeltype: Optional[ModelType] = None,
+                language: Optional[LanguageStyle] = None) -> List[str]:
+    """Returns the names of Xspec models from the model.dat file.
+
+    This returns the information on the model as taken from the Xspec
+    model library used to build this model.
+
+    Parameters
+    ----------
+    modeltype : ModelType or None, optional
+        If not None then restrict the list to this model type.
+    language : LanguageStyle or None, optional
+        If not None then restrict the list to this language type.
+
+    Returns
+    -------
+    models : list of str
+        A sorted list of the model names.
+
+    See Also
+    --------
+    info
+
+    Notes
+    -----
+    The restrictions are combined, so setting both `modeltype` and
+    `language` will select only those models which match both filters.
+
+    Examples
+    --------
+
+    >>> len(list_models())
+    231
+
+    >>> 'tbabs' in list_models()
+    False
+    >>> 'TBabs' in list_models()
+    True
+
+    With Xspec 12.13.1 / HEASOFT 6.29:
+
+    >>> list_models(modeltype=ModelType.Con)
+    ['cflux', 'clumin', 'cpflux', 'gsmooth', ..., 'zashift', 'zmshift']
+
+    >>> list_models(modeltype=ModelType.Con, language=LanguageStyle.F77Style4)
+    ['kyconv', 'rgsxsrc', 'thcomp']
+
+    """
+
+    out = set()
+    for k, v in _info.items():
+
+        if modeltype is not None and v.modeltype != modeltype:
+            continue
+
+        if language is not None and v.language != language:
+            continue
+
+        out.add(k)
+
+    return sorted(out)
