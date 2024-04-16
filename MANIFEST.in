@@ -1,0 +1,9 @@
+recursive-include helpers *.py
+include helpers/report_xspec_version.cxx
+include template/__init__.py
+include template/xspex.cpp
+
+include LICENSE
+include README.md
+include src/include/xspex.hpp
+include src/xspex/primitive.py
