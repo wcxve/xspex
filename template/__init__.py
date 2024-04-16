@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum, auto
 import logging
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .primitive import XspecPrimitive, XspecConvPrimitive
 
 try:
     from ._compiled import *
     __version__ = _compiled.__version__
+    __INITIALIZED__ = True
 except ImportError as ie:
     # Allow the actual error message to be reported if the user
     # has tweaked the log level, for instance with:
@@ -16,6 +24,7 @@ except ImportError as ie:
     logging.getLogger(__name__).info(str(ie))
 
     __version__ = "none"
+    __INITIALIZED__ = False
 
 _compiled._init()
 
@@ -53,14 +62,14 @@ class XspecParameter:
     paramtype: ParamType
     name: str
     default: float
-    units: Optional[str] = None
+    units: str | None = None
     frozen: bool = False
     # Would it be better to just have limits = [hardmin, softmni, softmax, hardmax]?
-    softmin: Optional[float] = None
-    softmax: Optional[float] = None
-    hardmin: Optional[float] = None
-    hardmax: Optional[float] = None
-    delta: Optional[float] = None
+    softmin: float | None = None
+    softmax: float | None = None
+    hardmin: float | None = None
+    hardmax: float | None = None
+    delta: float | None = None
 
 
 @dataclass
@@ -120,8 +129,7 @@ def info(model: str) -> XspecModel:
     # their case. Using casefold() rather than lower() is a bit OTT
     # here as I would bet model.dat is meant to be US-ASCII.
     check = model.casefold()
-    out = next((v for k, v in _info.items() if k.casefold() == check),
-               None)
+    out = next((v for k, v in _info.items() if k.casefold() == check), None)
     if out is None:
         raise ValueError(f"Unrecognized Xspec model '{model}'")
 
@@ -129,8 +137,8 @@ def info(model: str) -> XspecModel:
 
 
 # Do we need Optional here?
-def list_models(modeltype: Optional[ModelType] = None,
-                language: Optional[LanguageStyle] = None) -> List[str]:
+def list_models(modeltype: ModelType | None = None,
+                language: LanguageStyle | None = None) -> list[str]:
     """Returns the names of Xspec models from the model.dat file.
 
     This returns the information on the model as taken from the Xspec
@@ -190,3 +198,42 @@ def list_models(modeltype: Optional[ModelType] = None,
         out.add(k)
 
     return sorted(out)
+
+
+def get_primitive(
+    model: str
+) -> tuple[XspecPrimitive | XspecConvPrimitive, XspecModel]:
+    """Return the primitive for the given Xspec model.
+
+    Parameters
+    ----------
+    model : str
+        The Xspec model name.
+
+    Returns
+    -------
+    primitive : XspecPrimitive or XspecConvPrimitive
+        The primitive for the model.
+    model : XspecModel
+        The dataclass that describes the model.
+
+    Examples
+    --------
+
+    >>> apec, info = get_primitive('apec')
+    >>> apec
+    'apec'
+
+    """
+    if __INITIALIZED__:
+        from .primitive import XSModel
+
+    check = model.casefold()
+    p = next(
+        (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
+        None
+    )
+    if p is None:
+        raise ValueError(f"Unrecognized Xspec model '{model}'")
+
+    return p, info(model)
