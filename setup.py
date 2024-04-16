@@ -45,33 +45,34 @@ if platform.system() == 'Darwin':
 else:
     suffix = sysconfig.get_config_var('SHLIB_SUFFIX')
 
+
 # The tricky thing is that we have XSFunctions, XSUtil, and XS as
 # arguments. So we cannot just look for XS*, as that will match
 # multiple libraries. We also don't want to include all matches to XS
 # as there are a number of matches we do not need.
 def match(name):
     # Would it make sense to take the lib prefix from sysconfig?
-    head = f"lib{name}{suffix}"
+    head = f'lib{name}{suffix}'
     ms = glob.glob(str(libdir / head))
     if len(ms) == 1:
         return name
 
-    head = f"lib{name}_*{suffix}"
+    head = f'lib{name}_*{suffix}'
     ms = glob.glob(str(libdir / head))
     if len(ms) == 1:
         return pathlib.Path(ms[0]).stem[3:]
 
-    head = f"lib{name}-*{suffix}"
+    head = f'lib{name}-*{suffix}'
     ms = glob.glob(str(libdir / head))
     if len(ms) == 1:
         return pathlib.Path(ms[0]).stem[3:]
 
-    raise OSError(f"Unable to find a match for lib{name}*{suffix} in {libdir}")
+    raise OSError(f'Unable to find a match for lib{name}*{suffix} in {libdir}')
 
 
 xspec_libs = []
-for libname in ["XSFunctions", "XSUtil", "XS", "hdsp",
-                "cfitsio", "CCfits", "wcs"]:
+for libname in ['XSFunctions', 'XSUtil', 'XS', 'hdsp',
+                'cfitsio', 'CCfits', 'wcs']:
     # Note: not all names are versioned
     xspec_libs.append(match(libname))
 
@@ -95,21 +96,21 @@ macros = [('VERSION_INFO', __version__)] + xspec_macros
 
 
 ext_modules = [
-    Pybind11Extension("xspex._compiled",
-                      [str(info['outfile'])],
-                      cxx_std=11,
-                      extra_compile_args=['-O3'],
-                      include_dirs=[str(include_dir),
-                                    str(HEADAS / 'include')],
-                      library_dirs=[str(HEADAS / 'lib')],
-                      runtime_library_dirs=[str(HEADAS / 'lib')],
-                      libraries=xspec_libs,
-                      define_macros=macros)
+    Pybind11Extension(
+        'xspex._compiled',
+        [str(info['outfile'])],
+        cxx_std=11,
+        extra_compile_args=['-O3'],
+        include_dirs=[str(include_dir), str(HEADAS / 'include')],
+        library_dirs=[str(HEADAS / 'lib')],
+        runtime_library_dirs=[str(HEADAS / 'lib')],
+        libraries=xspec_libs,
+        define_macros=macros
+    )
 ]
-
 
 setup(
     version=__version__,
     ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
+    cmdclass={'build_ext': build_ext},
 )
