@@ -14,11 +14,6 @@ def test_primitive():
         f = e ** p / p
         return f[1:] - f[:-1]
 
-    @jax.jit
-    def grad(p, e, _):
-        f = (e ** (1 - p) * (1 + (-1 + p) * jnp.log(e))) / (-1 + p) ** 2
-        return f[1:] - f[:-1]
-
     powerlaw, _ = get_primitive('powerlaw')
     params = jnp.array([1.5])
     egrid = jnp.arange(1., 10., 0.1)
