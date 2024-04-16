@@ -200,40 +200,5 @@ def list_models(modeltype: ModelType | None = None,
     return sorted(out)
 
 
-def get_primitive(
-    model: str
-) -> tuple[XspecPrimitive | XspecConvPrimitive, XspecModel]:
-    """Return the primitive for the given Xspec model.
-
-    Parameters
-    ----------
-    model : str
-        The Xspec model name.
-
-    Returns
-    -------
-    primitive : XspecPrimitive or XspecConvPrimitive
-        The primitive for the model.
-    model : XspecModel
-        The dataclass that describes the model.
-
-    Examples
-    --------
-
-    >>> apec, info = get_primitive('apec')
-    >>> apec
-    'apec'
-
-    """
-    if __INITIALIZED__:
-        from .primitive import XSModel
-
-    check = model.casefold()
-    p = next(
-        (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
-        None
-    )
-    if p is None:
-        raise ValueError(f"Unrecognized Xspec model '{model}'")
-
-    return p, info(model)
+if __INITIALIZED__:
+    from .primitive import get_primitive

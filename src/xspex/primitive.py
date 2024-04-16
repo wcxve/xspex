@@ -191,6 +191,42 @@ class XspecConvPrimitive(XspecPrimitiveBase):
             return jnp.array(res), batch_axes[0]
 
 
+def get_primitive(
+    model: str
+) -> tuple[XspecPrimitive | XspecConvPrimitive, xspex.XspecModel]:
+    """Return the primitive for the given Xspec model.
+
+    Parameters
+    ----------
+    model : str
+        The Xspec model name.
+
+    Returns
+    -------
+    primitive : XspecPrimitive or XspecConvPrimitive
+        The primitive for the model.
+    model : XspecModel
+        The dataclass that describes the model.
+
+    Examples
+    --------
+
+    >>> apec, info = get_primitive('apec')
+    >>> apec
+    'apec'
+
+    """
+    check = model.casefold()
+    p = next(
+        (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
+        None
+    )
+    if p is None:
+        raise ValueError(f"Unrecognized Xspec model '{model}'")
+
+    return p, xspex.info(model)
+
+
 for k, v in xspex.xla_registrations().items():
     xla_client.register_custom_call_target(k, v, platform='cpu')
 
