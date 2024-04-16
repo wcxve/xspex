@@ -78,20 +78,20 @@ Convolution models
     // the values, and then leave the rest to the user to do in Python.
     //
     m.def(
-        "clearXFLT",
+        "clear_xflt",
 	    []() { return FunctionUtility::clearXFLT(); },
 	    "Clear the XFLT database for all spectra."
     );
 
     m.def(
-        "getNumberXFLT",
+        "get_number_xflt",
 	    [](int ifl) { return FunctionUtility::getNumberXFLT(ifl); },
 	    "How many XFLT keywords are defined for the spectrum?",
 	    "spectrum"_a=1
     );
 
     m.def(
-        "getXFLT",
+        "get_xflt",
 	    [](int ifl) { return FunctionUtility::getAllXFLT(ifl); },
 	    "What are all the XFLT keywords for the spectrum?",
 	    "spectrum"_a=1,
@@ -99,35 +99,35 @@ Convolution models
     );
 
     m.def(
-        "getXFLT",
+        "get_xflt",
 	    [](int ifl, int i) { return FunctionUtility::getXFLT(ifl, i); },
 	    "Return the given XFLT key.",
 	    "spectrum"_a, "key"_a
     );
 
     m.def(
-        "getXFLT",
+        "get_xflt",
 	    [](int ifl, string skey) { return FunctionUtility::getXFLT(ifl, skey); },
 	    "Return the given XFLT name.",
 	    "spectrum"_a, "name"_a
     );
 
     m.def(
-        "inXFLT",
+        "in_xflt",
 	    [](int ifl, int i) { return FunctionUtility::inXFLT(ifl, i); },
 	    "Is the given XFLT key set?",
 	    "spectrum"_a, "key"_a
     );
 
     m.def(
-        "inXFLT",
+        "in_xflt",
 	    [](int ifl, string skey) { return FunctionUtility::inXFLT(ifl, skey); },
 	    "Is the given XFLT name set?.",
 	    "spectrum"_a, "name"_a
     );
 
     m.def(
-        "setXFLT",
+        "set_xflt",
 	    [](int ifl, const std::map<string, Real>& values) { FunctionUtility::loadXFLT(ifl, values); },
 	    "Set the XFLT keywords for a spectrum",
 	    "spectrum"_a, "values"_a
@@ -138,20 +138,20 @@ Convolution models
     // What are the memory requirements?
     //
     m.def(
-        "clearModelString",
+        "clear_model_string",
 	    []() { return FunctionUtility::eraseModelStringDataBase(); },
 	    "Clear the model string database."
     );
 
     m.def(
-        "getModelString",
+        "get_model_string",
 	    []() { return FunctionUtility::modelStringDataBase(); },
 	    "Get the model string database.",
 	    py::return_value_policy::reference
     );
 
     m.def(
-        "getModelString",
+        "get_model_string",
 	    [](const string& key) {
 	        auto answer = FunctionUtility::getModelString(key);
 	        if (answer == FunctionUtility::NOT_A_KEY()) throw pybind11::key_error(key);
@@ -162,7 +162,7 @@ Convolution models
 	);
 
     m.def(
-        "setModelString",
+        "set_model_string",
 	    [](const string& key, const string& value) { FunctionUtility::setModelString(key, value); },
 	    "Get the key from the model string database.",
 	    "key"_a, "value"_a
@@ -172,13 +172,13 @@ Convolution models
     // Python.
     //
     m.def(
-        "clearDb",
+        "clear_db",
 	    []() { return FunctionUtility::clearDb(); },
 	    "Clear the keyword database."
     );
 
     m.def(
-        "getDb",
+        "get_db",
 	    []() { return FunctionUtility::getAllDbValues(); },
 	    "Get the keyword database.",
 	    py::return_value_policy::reference
@@ -188,7 +188,7 @@ Convolution models
     // return value. Catching this is annoying.
     //
     m.def(
-        "getDb",
+        "get_db",
 	    [](const string keyword) {
 	        std::ostringstream local;
 	        auto cerr_buff = std::cerr.rdbuf();
@@ -207,7 +207,7 @@ Convolution models
     );
 
     m.def(
-        "setDb",
+        "set_db",
 	    [](const string keyword, const double value) {
 	        FunctionUtility::loadDbValue(keyword, value);
 	    },
@@ -215,7 +215,7 @@ Convolution models
 	    "keyword"_a, "value"_a
     );
 
-    m.def("tableModel", &xspex::wrapper_table_model<float>, "Call Xspec table model.", "table"_a, "table_type"_a, "pars"_a, "energies"_a, "spectrum"_a=1);
+    m.def("table_model", &xspex::wrapper_table_model<float>, "Call Xspec table model.", "table"_a, "table_type"_a, "pars"_a, "energies"_a, "spectrum"_a=1);
 
     m.def("xla_registrations", &xla_registrations, "Registrations of XLA ops.");
 
