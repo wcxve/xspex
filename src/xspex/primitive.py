@@ -122,6 +122,7 @@ class XspecPrimitive(XspecPrimitiveBase):
             jnp.ones_like(params),
             jnp.abs(params)
         )
+        params_abs = jnp.expand_dims(params_abs, axis=-1)
 
         # See Numerical Recipes Chapter 5.7
         USE_CENTRAL_DIFF = True
