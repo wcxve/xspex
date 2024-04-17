@@ -124,10 +124,10 @@ def info(model: str) -> XspecModel:
     [('kT', 1.0, 'keV'), ('Abundanc', 1.0, None), ('Redshift', 0.0, None)]
 
     """
-
     # We want case-insensitive comparison but for the keys to retain
     # their case. Using casefold() rather than lower() is a bit OTT
     # here as I would bet model.dat is meant to be US-ASCII.
+    model = str(model)
     check = model.casefold()
     out = next((v for k, v in _info.items() if k.casefold() == check), None)
     if out is None:

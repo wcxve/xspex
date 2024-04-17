@@ -216,6 +216,7 @@ def get_primitive(
     'apec'
 
     """
+    model = str(model)
     check = model.casefold()
     p = next(
         (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
