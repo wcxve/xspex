@@ -116,7 +116,7 @@ class XspecPrimitive(XspecPrimitiveBase):
         out = self(params, egrid, spec_num)
         f_vmap = jax.vmap(jax.jit(self), in_axes=(0, None, None), out_axes=0)
         eps = jnp.finfo(params.dtype).eps
-        identy = jnp.eye(len(params))
+        identity = jnp.eye(len(params))
         params_abs = jnp.where(
             jnp.equal(params, 0.0),
             jnp.ones_like(params),
@@ -127,14 +127,14 @@ class XspecPrimitive(XspecPrimitiveBase):
         USE_CENTRAL_DIFF = True
         if USE_CENTRAL_DIFF:
             delta = params_abs * eps ** (1.0 / 3.0)
-            params_pos_perturb = params + identy * delta
+            params_pos_perturb = params + identity * delta
             out_pos_perturb = f_vmap(params_pos_perturb, egrid, spec_num)
-            params_neg_perturb = params - identy * delta
+            params_neg_perturb = params - identity * delta
             out_neg_perturb = f_vmap(params_neg_perturb, egrid, spec_num)
             d_out = (out_pos_perturb - out_neg_perturb) / (2.0 * delta)
         else:
             delta = params_abs * jnp.sqrt(eps)
-            params_perturb = params + identy * delta
+            params_perturb = params + identity * delta
             out_perturb = f_vmap(params_perturb, egrid, spec_num)
             d_out = (out_perturb - out) / delta
 
