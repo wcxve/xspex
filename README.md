@@ -13,8 +13,12 @@ pip install xspex
 ## Example
 
 ```python
+import jax
 import jax.numpy as jnp
 import xspex
+
+# For accuracy, it is recommended to enable double precision
+jax.config.update('jax_enable_x64', True)
 
 # Get APEC model primitive, whose JVP rule is defined by finite difference 
 apec, info = xspex.get_primitive('apec')
@@ -25,5 +29,5 @@ value = apec(
     egrid=jnp.geomspace(0.1, 0.2, 6),
     spec_num=1,
 )
-print(value)  # [1.2735856  0.37946814 0.24771158 0.10713547 0.10049101]
+print(value)  # [1.27358561 0.37946811 0.2477116  0.1071355  0.10049102]
 ```
