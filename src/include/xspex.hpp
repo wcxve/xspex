@@ -394,12 +394,14 @@ namespace xspex {
 	    return result;
 	  }
 
+
     template <xsccCall model, int NumPars>
     void wrapper_C_XLA_f32(void *out, void **in) {
         float *pptr = reinterpret_cast<float *>(in[0]);
         float *eptr = reinterpret_cast<float *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         float *optr = reinterpret_cast<float *>(out);
 
@@ -411,24 +413,40 @@ namespace xspex {
         double *pptr_ = pars_.data();
         double *eptr_ = energyArray_.data();
         double *optr_ = result_.data();
-
-        float_to_double(pptr, pptr_, NumPars);
         float_to_double(eptr, eptr_, nelem + 1);
-        model(eptr_, nelem, pptr_, spectrumNumber, optr_, errors_.data(), initStr.c_str());
-        double_to_float(optr_, optr, nelem);
+
+        for (int i = 0; i < batch; ++i) {
+            float *pptr_i = pptr + i * NumPars;
+            float *optr_i = optr + i * nelem;
+            float_to_double(pptr_i, pptr_, NumPars);
+            model(
+                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                errors_.data(), initStr.c_str()
+            );
+            double_to_float(optr_, optr_i, nelem);
+        }
     }
+
     template <xsccCall model, int NumPars>
     void wrapper_C_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto errors = std::vector<double>(nelem);
 
-        model(eptr, nelem, pptr, spectrumNumber, optr, errors.data(), initStr.c_str());
+        for (int i = 0; i < batch; ++i) {
+            double *pptr_i = pptr + i * NumPars;
+            double *optr_i = optr + i * nelem;
+            model(
+                eptr, nelem, pptr_i, spectrumNumber, optr_i,
+                errors.data(), initStr.c_str()
+            );
+        }
     }
 
 
@@ -438,18 +456,27 @@ namespace xspex {
         float *eptr = reinterpret_cast<float *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto errors = std::vector<float>(nelem);
 
-        model(eptr, nelem, pptr, spectrumNumber, optr, errors.data());
+        for (int i = 0; i < batch; ++i) {
+            float *pptr_i = pptr + i * NumPars;
+            float *optr_i = optr + i * nelem;
+            model(
+                eptr, nelem, pptr_i, spectrumNumber, optr_i, errors.data()
+            );
+        }
     }
+
     template <xsf77Call model, int NumPars>
     void wrapper_f_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto pars_ = std::vector<float>(NumPars);
@@ -460,11 +487,19 @@ namespace xspex {
         float *pptr_ = pars_.data();
         float *eptr_ = energyArray_.data();
         float *optr_ = result_.data();
-
-        double_to_float(pptr, pptr_, NumPars);
         double_to_float(eptr, eptr_, nelem + 1);
-        model(eptr_, nelem, pptr_, spectrumNumber, optr_, errors_.data());
-        float_to_double(optr_, optr, nelem);
+
+        for (int i = 0; i < batch; ++i) {
+            double *pptr_i = pptr + i * NumPars;
+            double *optr_i = optr + i * nelem;
+            double_to_float(pptr_i, pptr_, NumPars);
+            model(
+                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                errors_.data()
+            );
+            float_to_double(optr_, optr_i, nelem);
+        }
+        double_to_float(pptr, pptr_, NumPars);
     }
 
 
@@ -474,6 +509,7 @@ namespace xspex {
         float *eptr = reinterpret_cast<float *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto pars_ = std::vector<double>(NumPars);
@@ -484,23 +520,38 @@ namespace xspex {
         double *pptr_ = pars_.data();
         double *eptr_ = energyArray_.data();
         double *optr_ = result_.data();
-
-        float_to_double(pptr, pptr_, NumPars);
         float_to_double(eptr, eptr_, nelem + 1);
-        model(eptr_, nelem, pptr_, spectrumNumber, optr_, errors_.data());
-        double_to_float(optr_, optr, nelem);
+
+        for (int i = 0; i < batch; ++i) {
+            float *pptr_i = pptr + i * NumPars;
+            float *optr_i = optr + i * nelem;
+            float_to_double(pptr_i, pptr_, NumPars);
+            model(
+                eptr_, nelem, pptr_, spectrumNumber, optr_, errors_.data()
+            );
+            double_to_float(optr_, optr_i, nelem);
+        }
     }
+
     template <xsF77Call model, int NumPars>
     void wrapper_F_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
         double *eptr = reinterpret_cast<double *>(in[1]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[2]);
         const int nelem = *reinterpret_cast<int *>(in[3]);
+        const int batch = *reinterpret_cast<int *>(in[4]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto errors = std::vector<double>(nelem);
 
-        model(eptr, nelem, pptr, spectrumNumber, optr, errors.data());
+        for (int i = 0; i < batch; ++i) {
+            double *pptr_i = pptr + i * NumPars;
+            double *optr_i = optr + i * nelem;
+            model(
+                eptr, nelem, pptr_i, spectrumNumber, optr_i,
+                errors.data()
+            );
+        }
     }
 
 
@@ -511,24 +562,36 @@ namespace xspex {
         float *mptr = reinterpret_cast<float *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
+        const int batch = *reinterpret_cast<int *>(in[5]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[6]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto pars_ = std::vector<double>(NumPars);
         auto energyArray_ = std::vector<double>(nelem + 1);
         auto model_ = std::vector<double>(nelem);
         auto errors_ = std::vector<double>(nelem);
+        auto out_ = std::vector<double>(nelem);
 
         double *pptr_ = pars_.data();
         double *eptr_ = energyArray_.data();
         double *mptr_ = model_.data();
-
-        float_to_double(pptr, pptr_, NumPars);
+        double *optr_ = out_.data();
         float_to_double(eptr, eptr_, nelem + 1);
         float_to_double(mptr, mptr_, nelem + 1);
-        model(eptr_, nelem, pptr_, spectrumNumber, mptr_, errors_.data(), initStr.c_str());
-        double_to_float(mptr_, optr, nelem);
+
+        for (int i = 0; i < batch; ++i) {
+            float *pptr_i = pptr + i * NumPars;
+            float *optr_i = optr + i * nelem;
+            std::copy(mptr_, mptr_ + nelem, optr_);
+            float_to_double(pptr_i, pptr_, NumPars);
+            model(
+                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                errors_.data(), initStr.c_str()
+            );
+            double_to_float(optr_, optr_i, nelem);
+        }
     }
+
     template <xsccCall model, int NumPars>
     void wrapper_con_C_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
@@ -536,18 +599,24 @@ namespace xspex {
         double *mptr = reinterpret_cast<double *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const string initStr = "";  //*reinterpret_cast<string *>(in[5]);
+        const int batch = *reinterpret_cast<int *>(in[5]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[6]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto model_ = std::vector<double>(nelem);
         auto errors_ = std::vector<double>(nelem);
 
         double *mptr_ = model_.data();
-        std::copy(mptr, mptr + nelem, mptr_);
 
-        model(eptr, nelem, pptr, spectrumNumber, mptr_, errors_.data(), initStr.c_str());
-
-        std::copy(mptr_, mptr_ + nelem, optr);
+        for (int i = 0; i < batch; ++i) {
+            double *pptr_i = pptr + i * NumPars;
+            double *optr_i = optr + i * nelem;
+            std::copy(mptr, mptr + nelem, optr_i);
+            model(
+                eptr, nelem, pptr_i, spectrumNumber, optr_i,
+                errors_.data(), initStr.c_str()
+            );
+        }
     }
 
 
@@ -558,18 +627,22 @@ namespace xspex {
         float *mptr = reinterpret_cast<float *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
+        const int batch = *reinterpret_cast<int *>(in[5]);
         float *optr = reinterpret_cast<float *>(out);
 
         auto model_ = std::vector<float>(nelem);
         auto errors_ = std::vector<float>(nelem);
 
         float *mptr_ = model_.data();
-        std::copy(mptr, mptr + nelem, mptr_);
 
-        model(eptr, nelem, pptr, spectrumNumber, mptr_, errors_.data());
-
-        std::copy(mptr_, mptr_ + nelem, optr);
+        for (int i = 0; i < batch; ++i) {
+            float *pptr_i = pptr + i * NumPars;
+            float *optr_i = optr + i * nelem;
+            std::copy(mptr, mptr + nelem, optr_i);
+            model(eptr, nelem, pptr_i, spectrumNumber, optr_i, errors_.data());
+        }
     }
+
     template <xsf77Call model, int NumPars>
     void wrapper_con_f_XLA_f64(void *out, void **in) {
         double *pptr = reinterpret_cast<double *>(in[0]);
@@ -577,22 +650,33 @@ namespace xspex {
         double *mptr = reinterpret_cast<double *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
+        const int batch = *reinterpret_cast<int *>(in[5]);
         double *optr = reinterpret_cast<double *>(out);
 
         auto pars_ = std::vector<float>(NumPars);
         auto energyArray_ = std::vector<float>(nelem + 1);
         auto model_ = std::vector<float>(nelem);
         auto errors_ = std::vector<float>(nelem);
+        auto out_ = std::vector<float>(nelem);
 
         float *pptr_ = pars_.data();
         float *eptr_ = energyArray_.data();
         float *mptr_ = model_.data();
-
-        double_to_float(pptr, pptr_, NumPars);
+        float *optr_ = out_.data();
         double_to_float(eptr, eptr_, nelem + 1);
         double_to_float(mptr, mptr_, nelem + 1);
-        model(eptr_, nelem, pptr_, spectrumNumber, mptr_, errors_.data());
-        float_to_double(mptr_, optr, nelem);
+
+        for (int i = 0; i < batch; ++i) {
+            double *pptr_i = pptr + i * NumPars;
+            double *optr_i = optr + i * nelem;
+            std::copy(mptr_, mptr_ + nelem, optr_);
+            double_to_float(pptr_i, pptr_, NumPars);
+            model(
+                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                errors_.data()
+            );
+            float_to_double(optr_, optr_i, nelem);
+        }
     }
 
 

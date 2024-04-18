@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import partial
+from math import prod
 
 import jax
 import jax.numpy as jnp
@@ -20,8 +21,6 @@ def avals_to_layouts(avals):
 
 
 class XspecPrimitiveBase(Primitive, ABC):
-    _has_jvp: bool
-
     def __init__(self, name: str):
         name = str(name)
         if name not in xspex.list_models():
@@ -29,26 +28,25 @@ class XspecPrimitiveBase(Primitive, ABC):
 
         super().__init__(f'XS{name}')
         self._model_name = name
-        self._model_type = xspex.info(name).modeltype.name.lower()
+        self._nparam = len(xspex.info(name).parameters)
 
         self.def_impl(partial(xla.apply_primitive, self))
         # self.def_impl(getattr(xspex, name))
 
-        self.def_abstract_eval(self.abstract_eval)
+        self.def_abstract_eval(self.get_abstract_eval())
 
         mlir.register_lowering(self, self.lowering, platform='cpu')
 
         batching.primitive_batchers[self] = self.batching
 
-        ad.primitive_jvps[self] = partial(self.jvp)
+        ad.primitive_jvps[self] = self.jvp
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
         pass
 
-    @staticmethod
     @abstractmethod
-    def abstract_eval(*args, **kwargs):
+    def get_abstract_eval(self):
         pass
 
     @abstractmethod
@@ -64,14 +62,29 @@ class XspecPrimitiveBase(Primitive, ABC):
 
 
 class XspecPrimitive(XspecPrimitiveBase):
-    _has_jvp: bool = True
-
     def __call__(self, params, egrid, spec_num):
         return self.bind(params, egrid, spec_num)
 
-    @staticmethod
-    def abstract_eval(params, egrid, spec_num):
-        return ShapedArray([egrid.shape[-1] - 1], egrid.dtype)
+    def get_abstract_eval(self):
+        name = self.name
+        npar = self._nparam
+
+        def abstract_eval(params, egrid, spec_num):
+            params_shape = jnp.shape(params)
+            if params_shape[-1] != npar:
+                raise ValueError(f'{name} params shape must be (..., {npar})')
+            egrid_shape = jnp.shape(egrid)
+            if len(egrid_shape) > 1:
+                raise ValueError('egrid must be 1D array')
+            spec_num_shape = jnp.shape(spec_num)
+            if len(spec_num_shape):
+                raise ValueError('spec_num must be a integer')
+
+            shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
+            dtype = jax.dtypes.canonicalize_dtype(egrid.dtype)
+            return ShapedArray(shape=shape, dtype=dtype)
+
+        return abstract_eval
 
     def lowering(self, ctx, params, egrid, spec_num):
         egrid_type = mlir.ir.RankedTensorType(egrid.type)
@@ -85,11 +98,12 @@ class XspecPrimitive(XspecPrimitiveBase):
         out_shape = ctx.avals_out[0].shape
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
+        batch_n = mlir.ir_constant(prod(out_shape[:-1]))
         return custom_call(
             call_target_name,
             result_types=[out_type],
-            operands=[params, egrid, spec_num, out_n],
-            operand_layouts=avals_to_layouts(ctx.avals_in) + [()],
+            operands=[params, egrid, spec_num, out_n, batch_n],
+            operand_layouts=avals_to_layouts(ctx.avals_in) + [(), ()],
             result_layouts=avals_to_layouts(ctx.avals_out)
         ).results
 
@@ -100,20 +114,14 @@ class XspecPrimitive(XspecPrimitiveBase):
             raise NotImplementedError('spec_num batching is not implemented')
 
         params, egrid, spec_num = vector_arg_values
-        if params.ndim == 1:
-            return self(params, egrid, spec_num), batch_axes[0]
-        else:
-            res = [
-                self.batching((p, egrid, spec_num), batch_axes)[0]
-                for p in params
-            ]
-            return jnp.array(res), batch_axes[0]
+        params = jnp.moveaxis(params, batch_axes[0], 0)
+        return self(params, egrid, spec_num), 0
 
     def jvp(self, primals, tangents):
         params, egrid, spec_num = primals
         d_params = tangents[0]
 
-        out = self(params, egrid, spec_num)
+        primals_out = self(params, egrid, spec_num)
         f_vmap = jax.vmap(jax.jit(self), in_axes=(0, None, None), out_axes=0)
         eps = jnp.finfo(params.dtype).eps
         identity = jnp.eye(len(params))
@@ -137,21 +145,39 @@ class XspecPrimitive(XspecPrimitiveBase):
             delta = params_abs * jnp.sqrt(eps)
             params_perturb = params + identity * delta
             out_perturb = f_vmap(params_perturb, egrid, spec_num)
-            d_out = (out_perturb - out) / delta
+            d_out = (out_perturb - primals_out) / delta
 
         tangents_out = d_params @ d_out
-        return out, tangents_out
+        return primals_out, tangents_out
 
 
 class XspecConvPrimitive(XspecPrimitiveBase):
-    _has_jvp: bool = False
-
     def __call__(self, params, egrid, flux, spec_num):
         return self.bind(params, egrid, flux, spec_num)
 
-    @staticmethod
-    def abstract_eval(params, egrid, flux, spec_num):
-        return ShapedArray([egrid.shape[-1] - 1], egrid.dtype)
+    def get_abstract_eval(self):
+        name = self.name
+        npar = self._nparam
+
+        def abstract_eval(params, egrid, flux, spec_num):
+            params_shape = jnp.shape(params)
+            if params_shape[-1] != npar:
+                raise ValueError(f'{name} params shape must be (..., {npar})')
+            egrid_shape = jnp.shape(egrid)
+            if len(egrid_shape) > 1:
+                raise ValueError('egrid must be 1D array')
+            flux_shape = jnp.shape(flux)
+            if len(flux_shape) > 1:
+                raise ValueError('flux must be 1D array')
+            spec_num_shape = jnp.shape(spec_num)
+            if len(spec_num_shape):
+                raise ValueError('spec_num must be a integer')
+
+            shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
+            dtype = jax.dtypes.canonicalize_dtype(egrid.dtype)
+            return ShapedArray(shape=shape, dtype=dtype)
+
+        return abstract_eval
 
     def lowering(self, ctx, params, egrid, flux, spec_num):
         egrid_type = mlir.ir.RankedTensorType(egrid.type)
@@ -165,11 +191,12 @@ class XspecConvPrimitive(XspecPrimitiveBase):
         out_shape = ctx.avals_out[0].shape
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
+        batch_n = mlir.ir_constant(prod(out_shape[:-1]))
         return custom_call(
             call_target_name,
             result_types=[out_type],
-            operands=[params, egrid, flux, spec_num, out_n],
-            operand_layouts=avals_to_layouts(ctx.avals_in) + [()],
+            operands=[params, egrid, flux, spec_num, out_n, batch_n],
+            operand_layouts=avals_to_layouts(ctx.avals_in) + [(), ()],
             result_layouts=avals_to_layouts(ctx.avals_out)
         ).results
 
@@ -182,14 +209,8 @@ class XspecConvPrimitive(XspecPrimitiveBase):
             raise NotImplementedError('spec_num batching is not implemented')
 
         params, egrid, flux, spec_num = vector_arg_values
-        if params.ndim == 1:
-            return self(params, egrid, flux, spec_num), batch_axes[0]
-        else:
-            res = [
-                self.batching((p, egrid, flux, spec_num), batch_axes)[0]
-                for p in params
-            ]
-            return jnp.array(res), batch_axes[0]
+        params = jnp.moveaxis(params, batch_axes[0], 0)
+        return self(params, egrid, flux, spec_num), 0
 
 
 def get_primitive(
