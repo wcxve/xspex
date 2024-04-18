@@ -603,10 +603,7 @@ namespace xspex {
         const string initStr = "";  //*reinterpret_cast<string *>(in[6]);
         double *optr = reinterpret_cast<double *>(out);
 
-        auto model_ = std::vector<double>(nelem);
         auto errors_ = std::vector<double>(nelem);
-
-        double *mptr_ = model_.data();
 
         for (int i = 0; i < batch; ++i) {
             double *pptr_i = pptr + i * NumPars;
@@ -630,10 +627,7 @@ namespace xspex {
         const int batch = *reinterpret_cast<int *>(in[5]);
         float *optr = reinterpret_cast<float *>(out);
 
-        auto model_ = std::vector<float>(nelem);
         auto errors_ = std::vector<float>(nelem);
-
-        float *mptr_ = model_.data();
 
         for (int i = 0; i < batch; ++i) {
             float *pptr_i = pptr + i * NumPars;
