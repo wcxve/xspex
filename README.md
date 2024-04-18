@@ -4,7 +4,7 @@ Access Xspec models and corresponding JAX/XLA ops, based on [xspec_models_cxc](h
 
 ## Installation
 
-Note: `HEASoft` & `Xspec` are required be installed on your system. You can download it from [here](https://heasarc.gsfc.nasa.gov/lheasoft/).
+Note: `HEASoft` & `Xspec` are required to be installed on your system. You can download it from [here](https://heasarc.gsfc.nasa.gov/lheasoft/).
 
 ```bash
 pip install xspex
