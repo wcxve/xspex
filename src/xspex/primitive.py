@@ -71,10 +71,10 @@ class XspecPrimitive(XspecPrimitiveBase):
 
         def abstract_eval(params, egrid, spec_num):
             params_shape = jnp.shape(params)
-            if params_shape[-1] != npar:
+            if params_shape == () or params_shape[-1] != npar:
                 raise ValueError(f'{name} params shape must be (..., {npar})')
             egrid_shape = jnp.shape(egrid)
-            if len(egrid_shape) > 1:
+            if len(egrid_shape) != 1:
                 raise ValueError('egrid must be 1D array')
             spec_num_shape = jnp.shape(spec_num)
             if len(spec_num_shape):
@@ -98,12 +98,12 @@ class XspecPrimitive(XspecPrimitiveBase):
         out_shape = ctx.avals_out[0].shape
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
-        batch_n = mlir.ir_constant(prod(out_shape[:-1]))
+        out_batch = mlir.ir_constant(prod(out_shape[:-1]))
         return custom_call(
             call_target_name,
             result_types=[out_type],
-            operands=[params, egrid, spec_num, out_n, batch_n],
-            operand_layouts=avals_to_layouts(ctx.avals_in) + [(), ()],
+            operands=[params, egrid, spec_num, out_n, out_batch],
+            operand_layouts=avals_to_layouts(ctx.avals_in) + [()] * 2,
             result_layouts=avals_to_layouts(ctx.avals_out)
         ).results
 
@@ -161,19 +161,27 @@ class XspecConvPrimitive(XspecPrimitiveBase):
 
         def abstract_eval(params, egrid, flux, spec_num):
             params_shape = jnp.shape(params)
-            if params_shape[-1] != npar:
+            if params_shape == () or params_shape[-1] != npar:
                 raise ValueError(f'{name} params shape must be (..., {npar})')
             egrid_shape = jnp.shape(egrid)
-            if len(egrid_shape) > 1:
+            if len(egrid_shape) != 1:
                 raise ValueError('egrid must be 1D array')
             flux_shape = jnp.shape(flux)
-            if len(flux_shape) > 1:
-                raise ValueError('flux must be 1D array')
+            if flux_shape == () or flux_shape[-1] != egrid_shape[-1] - 1:
+                raise ValueError('flux shape must be (..., len(egrid) - 1)')
             spec_num_shape = jnp.shape(spec_num)
             if len(spec_num_shape):
                 raise ValueError('spec_num must be a integer')
 
-            shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
+            if len(params_shape) > 1 and len(flux_shape) > 1:
+                if params_shape[:-1] != flux_shape[:-1]:
+                    raise ValueError(
+                        'params and flux should have the same batch size'
+                    )
+            if len(params_shape) >= len(flux_shape):
+                shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
+            else:
+                shape = flux_shape[:-1] + (egrid_shape[-1] - 1,)
             dtype = jax.dtypes.canonicalize_dtype(egrid.dtype)
             return ShapedArray(shape=shape, dtype=dtype)
 
@@ -188,28 +196,38 @@ class XspecConvPrimitive(XspecPrimitiveBase):
             call_target_name = f'{self._model_name}_f64'
         else:
             raise NotImplementedError(f'unsupported dtype {etype}')
+
+        params_shape = ctx.avals_in[0].shape
+        params_batch = mlir.ir_constant(prod(params_shape[:-1]))
+
+        flux_shape = ctx.avals_in[2].shape
+        flux_batch = mlir.ir_constant(prod(flux_shape[:-1]))
+
         out_shape = ctx.avals_out[0].shape
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
-        batch_n = mlir.ir_constant(prod(out_shape[:-1]))
+
         return custom_call(
             call_target_name,
             result_types=[out_type],
-            operands=[params, egrid, flux, spec_num, out_n, batch_n],
-            operand_layouts=avals_to_layouts(ctx.avals_in) + [(), ()],
+            operands=[
+                params, egrid, flux, spec_num, out_n, params_batch, flux_batch
+            ],
+            operand_layouts=avals_to_layouts(ctx.avals_in) + [()] * 3,
             result_layouts=avals_to_layouts(ctx.avals_out)
         ).results
 
     def batching(self, vector_arg_values, batch_axes):
         if batch_axes[1] is not None:
             raise NotImplementedError('egrid batching is not implemented')
-        if batch_axes[2] is not None:
-            raise NotImplementedError('flux batching is not implemented')
         if batch_axes[3] is not None:
             raise NotImplementedError('spec_num batching is not implemented')
 
         params, egrid, flux, spec_num = vector_arg_values
-        params = jnp.moveaxis(params, batch_axes[0], 0)
+        if batch_axes[0] is not None:
+            params = jnp.moveaxis(params, batch_axes[0], 0)
+        if batch_axes[2] is not None:
+            flux = jnp.moveaxis(flux, batch_axes[2], 0)
         return self(params, egrid, flux, spec_num), 0
 
 

@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(__file__))
 from helpers import template
 from helpers.identify_xspec import get_xspec_macros
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 # Check HEASARC is set up. The following does not provide a useful
 # message from 'pip install' so how do we make it more meaningful?

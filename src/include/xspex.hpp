@@ -562,33 +562,51 @@ namespace xspex {
         float *mptr = reinterpret_cast<float *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const int batch = *reinterpret_cast<int *>(in[5]);
-        const string initStr = "";  //*reinterpret_cast<string *>(in[6]);
+        const int pbatch = *reinterpret_cast<int *>(in[5]);
+        const int mbatch = *reinterpret_cast<int *>(in[6]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[7]);
         float *optr = reinterpret_cast<float *>(out);
 
-        auto pars_ = std::vector<double>(NumPars);
-        auto energyArray_ = std::vector<double>(nelem + 1);
-        auto model_ = std::vector<double>(nelem);
-        auto errors_ = std::vector<double>(nelem);
-        auto out_ = std::vector<double>(nelem);
-
-        double *pptr_ = pars_.data();
-        double *eptr_ = energyArray_.data();
+        int batch = std::max(1, std::max(pbatch, mbatch));
+        auto params_ = std::vector<double>(NumPars * batch);
+        auto model_ = std::vector<double>(nelem * batch);
+        double *pptr_ = params_.data();
         double *mptr_ = model_.data();
-        double *optr_ = out_.data();
+
+        if (pbatch >= 1 && mbatch == 1) {
+            float_to_double(pptr, pptr_, NumPars * batch);
+            for (int i = 0; i < batch; ++i) {
+                float_to_double(mptr, mptr_ + i * nelem, nelem);
+            }
+        } else if (pbatch == 1 && mbatch > 1) {
+            float_to_double(mptr, mptr_, nelem * batch);
+            for (int i = 0; i < batch; ++i) {
+                float_to_double(pptr, pptr_ + i * NumPars, NumPars);
+            }
+        } else {
+            if (pbatch > 1 && mbatch > 1 && pbatch == mbatch) {
+                float_to_double(pptr, pptr_, NumPars * batch);
+                float_to_double(mptr, mptr_, nelem * batch);
+            } else {
+                throw std::invalid_argument("Invalid batch sizes");
+            }
+        }
+
+        auto energyArray_ = std::vector<double>(nelem + 1);
+        auto errors_ = std::vector<double>(nelem);
+
+        double *eptr_ = energyArray_.data();
         float_to_double(eptr, eptr_, nelem + 1);
-        float_to_double(mptr, mptr_, nelem + 1);
 
         for (int i = 0; i < batch; ++i) {
-            float *pptr_i = pptr + i * NumPars;
             float *optr_i = optr + i * nelem;
-            std::copy(mptr_, mptr_ + nelem, optr_);
-            float_to_double(pptr_i, pptr_, NumPars);
+            double *pptr_i = pptr_ + i * NumPars;
+            double *mptr_i = mptr_ + i * nelem;
             model(
-                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                eptr_, nelem, pptr_i, spectrumNumber, mptr_i,
                 errors_.data(), initStr.c_str()
             );
-            double_to_float(optr_, optr_i, nelem);
+            double_to_float(mptr_i, optr_i, nelem);
         }
     }
 
@@ -599,16 +617,43 @@ namespace xspex {
         double *mptr = reinterpret_cast<double *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const int batch = *reinterpret_cast<int *>(in[5]);
-        const string initStr = "";  //*reinterpret_cast<string *>(in[6]);
+        const int pbatch = *reinterpret_cast<int *>(in[5]);
+        const int mbatch = *reinterpret_cast<int *>(in[6]);
+        const string initStr = "";  //*reinterpret_cast<string *>(in[7]);
         double *optr = reinterpret_cast<double *>(out);
+
+        int batch = std::max(1, std::max(pbatch, mbatch));
+        auto params_ = std::vector<double>(NumPars * batch);
+        auto model_ = std::vector<double>(nelem * batch);
+        double *pptr_ = params_.data();
+        double *mptr_ = model_.data();
+
+        if (pbatch >= 1 && mbatch == 1) {
+            std::copy(pptr, pptr + NumPars * batch, pptr_);
+            for (int i = 0; i < batch; ++i) {
+                std::copy(mptr, mptr + nelem, mptr_ + i * nelem);
+            }
+        } else if (pbatch == 1 && mbatch > 1) {
+            std::copy(mptr, mptr + nelem * batch, mptr_);
+            for (int i = 0; i < batch; ++i) {
+                std::copy(pptr, pptr + NumPars, pptr_ + i * NumPars);
+            }
+        } else {
+            if (pbatch > 1 && mbatch > 1 && pbatch == mbatch) {
+                std::copy(pptr, pptr + NumPars * batch, pptr_);
+                std::copy(mptr, mptr + nelem * batch, mptr_);
+            } else {
+                throw std::invalid_argument("Invalid batch sizes");
+            }
+        }
 
         auto errors_ = std::vector<double>(nelem);
 
         for (int i = 0; i < batch; ++i) {
-            double *pptr_i = pptr + i * NumPars;
+            double *pptr_i = pptr_ + i * NumPars;
+            double *mptr_i = mptr_ + i * nelem;
             double *optr_i = optr + i * nelem;
-            std::copy(mptr, mptr + nelem, optr_i);
+            std::copy(mptr_i, mptr_i + nelem, optr_i);
             model(
                 eptr, nelem, pptr_i, spectrumNumber, optr_i,
                 errors_.data(), initStr.c_str()
@@ -624,15 +669,42 @@ namespace xspex {
         float *mptr = reinterpret_cast<float *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const int batch = *reinterpret_cast<int *>(in[5]);
+        const int pbatch = *reinterpret_cast<int *>(in[5]);
+        const int mbatch = *reinterpret_cast<int *>(in[6]);
         float *optr = reinterpret_cast<float *>(out);
+
+        int batch = std::max(1, std::max(pbatch, mbatch));
+        auto params_ = std::vector<float>(NumPars * batch);
+        auto model_ = std::vector<float>(nelem * batch);
+        float *pptr_ = params_.data();
+        float *mptr_ = model_.data();
+
+        if (pbatch >= 1 && mbatch == 1) {
+            std::copy(pptr, pptr + NumPars * batch, pptr_);
+            for (int i = 0; i < batch; ++i) {
+                std::copy(mptr, mptr + nelem, mptr_ + i * nelem);
+            }
+        } else if (pbatch == 1 && mbatch > 1) {
+            std::copy(mptr, mptr + nelem * batch, mptr_);
+            for (int i = 0; i < batch; ++i) {
+                std::copy(pptr, pptr + NumPars, pptr_ + i * NumPars);
+            }
+        } else {
+            if (pbatch > 1 && mbatch > 1 && pbatch == mbatch) {
+                std::copy(pptr, pptr + NumPars * batch, pptr_);
+                std::copy(mptr, mptr + nelem * batch, mptr_);
+            } else {
+                throw std::invalid_argument("Invalid batch sizes");
+            }
+        }
 
         auto errors_ = std::vector<float>(nelem);
 
         for (int i = 0; i < batch; ++i) {
             float *pptr_i = pptr + i * NumPars;
+            float *mptr_i = mptr_ + i * nelem;
             float *optr_i = optr + i * nelem;
-            std::copy(mptr, mptr + nelem, optr_i);
+            std::copy(mptr_i, mptr_i + nelem, optr_i);
             model(eptr, nelem, pptr_i, spectrumNumber, optr_i, errors_.data());
         }
     }
@@ -644,32 +716,50 @@ namespace xspex {
         double *mptr = reinterpret_cast<double *>(in[2]);
         const int spectrumNumber = *reinterpret_cast<int *>(in[3]);
         const int nelem = *reinterpret_cast<int *>(in[4]);
-        const int batch = *reinterpret_cast<int *>(in[5]);
+        const int pbatch = *reinterpret_cast<int *>(in[5]);
+        const int mbatch = *reinterpret_cast<int *>(in[6]);
         double *optr = reinterpret_cast<double *>(out);
 
-        auto pars_ = std::vector<float>(NumPars);
-        auto energyArray_ = std::vector<float>(nelem + 1);
-        auto model_ = std::vector<float>(nelem);
-        auto errors_ = std::vector<float>(nelem);
-        auto out_ = std::vector<float>(nelem);
-
-        float *pptr_ = pars_.data();
-        float *eptr_ = energyArray_.data();
+        int batch = std::max(1, std::max(pbatch, mbatch));
+        auto params_ = std::vector<float>(NumPars * batch);
+        auto model_ = std::vector<float>(nelem * batch);
+        float *pptr_ = params_.data();
         float *mptr_ = model_.data();
-        float *optr_ = out_.data();
+
+        if (pbatch >= 1 && mbatch == 1) {
+            double_to_float(pptr, pptr_, NumPars * batch);
+            for (int i = 0; i < batch; ++i) {
+                double_to_float(mptr, mptr_ + i * nelem, nelem);
+            }
+        } else if (pbatch == 1 && mbatch > 1) {
+            double_to_float(mptr, mptr_, nelem * batch);
+            for (int i = 0; i < batch; ++i) {
+                double_to_float(pptr, pptr_ + i * NumPars, NumPars);
+            }
+        } else {
+            if (pbatch > 1 && mbatch > 1 && pbatch == mbatch) {
+                double_to_float(pptr, pptr_, NumPars * batch);
+                double_to_float(mptr, mptr_, nelem * batch);
+            } else {
+                throw std::invalid_argument("Invalid batch sizes");
+            }
+        }
+
+        auto energyArray_ = std::vector<float>(nelem + 1);
+        auto errors_ = std::vector<float>(nelem);
+
+        float *eptr_ = energyArray_.data();
         double_to_float(eptr, eptr_, nelem + 1);
-        double_to_float(mptr, mptr_, nelem + 1);
 
         for (int i = 0; i < batch; ++i) {
-            double *pptr_i = pptr + i * NumPars;
             double *optr_i = optr + i * nelem;
-            std::copy(mptr_, mptr_ + nelem, optr_);
-            double_to_float(pptr_i, pptr_, NumPars);
+            float *pptr_i = pptr_ + i * NumPars;
+            float *mptr_i = mptr_ + i * nelem;
             model(
-                eptr_, nelem, pptr_, spectrumNumber, optr_,
+                eptr_, nelem, pptr_i, spectrumNumber, mptr_i,
                 errors_.data()
             );
-            float_to_double(optr_, optr_i, nelem);
+            float_to_double(mptr_i, optr_i, nelem);
         }
     }
 
