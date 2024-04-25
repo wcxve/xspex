@@ -208,11 +208,16 @@ def test_batching_con(model):
     y1 = np.array([mfunc(energies=egrid, pars=p, model=mvals) for p in pars])
     y2 = jax.vmap(p, in_axes=(0, None, None, None), out_axes=0)(pars, egrid, mvals, 1)
     y3 = jax.jit(jax.vmap(p, in_axes=(0, None, None, None), out_axes=0))(pars, egrid, mvals, 1)
+    mvals_n = np.tile(mvals, (n, 1))
+    y4 = jax.vmap(p, in_axes=(None, None, 0, None), out_axes=0)(pars[0], egrid, mvals_n, 1)
+    y5 = jax.vmap(p, in_axes=(0, None, 0, None), out_axes=0)(pars, egrid, mvals_n, 1)
 
     assert (y1 > 0).any()
     assert np.any(y1 != ymodel)
     assert np.allclose(y1, y2)
     assert np.allclose(y1, y3)
+    assert np.allclose(y1, y4)
+    assert np.allclose(y1, y5)
 
 
 # @pytest.mark.parametrize("model", MODELS_ADD + MODELS_MUL)
