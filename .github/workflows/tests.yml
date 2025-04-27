@@ -17,6 +17,11 @@ env:
 
 jobs:
   tests:
+    defaults:
+      run:
+        # See https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
+        # to ensure we pass the "-el {0}" option
+        shell: bash -el {0}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,6 +35,7 @@ jobs:
       - name: Install Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
+          activate-environment: test
           channels: conda-forge,defaults
           channel-priority: true
           mamba-version: "*"
@@ -37,7 +43,6 @@ jobs:
       - name: Conda Setup
         run: |
           mamba create -y -n test -c $XSPECCHAN -c conda-forge python=$PYTHONVER xspec
-          mamba activate test
       - name: Install dependencies
         run: |
           python -m pip install -U pip
@@ -53,6 +58,11 @@ jobs:
           verbose: true
 
   build:
+    defaults:
+      run:
+        # See https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
+        # to ensure we pass the "-el {0}" option
+        shell: bash -el {0}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +71,7 @@ jobs:
       - name: Install Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
+          activate-environment: build
           channels: conda-forge,defaults
           channel-priority: true
           mamba-version: "*"
@@ -68,7 +79,6 @@ jobs:
       - name: Conda Setup
         run: |
           mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec
-          mamba activate build
       - name: Install dependencies
         run: |
           python -m pip install -U pip
