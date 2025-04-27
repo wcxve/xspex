@@ -41,13 +41,6 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[project.optional-dependencies]
-test = [
-    "coverage[toml]",
-    "pytest",
-    "pytest-cov",
-]
-
 [tool.pytest]
 ini_options.addopts = "--cov=xspex --cov-report xml"
 
