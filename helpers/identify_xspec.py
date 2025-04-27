@@ -24,11 +24,15 @@ def compile_code(HEADAS):
     helpers = pathlib.Path("helpers")
 
     compiler = get_compiler()
-    args = [compiler, str(helpers / f"{basename}.cxx"),
-            "-o", str(helpers / basename),
-            f"-I{HEADAS}/include",
-            f"-L{HEADAS}/lib", "-lXSUtil"
-        ]
+    args = [
+        compiler,
+        str(helpers / f"{basename}.cxx"),
+        "-o",
+        str(helpers / basename),
+        f"-I{HEADAS}/include",
+        f"-L{HEADAS}/lib",
+        "-lXSUtil",
+    ]
 
     subprocess.run(args, check=True)
     return helpers / basename
@@ -51,9 +55,7 @@ def get_xspec_macros(HEADAS):
     """
 
     code = compile_code(HEADAS)
-    command = subprocess.run([str(code)],
-                             check=True,
-                             stdout=subprocess.PIPE)
+    command = subprocess.run([str(code)], check=True, stdout=subprocess.PIPE)
 
     xspec_version = command.stdout.decode().strip()
     print(f"Building against Xspec: '{xspec_version}'")
@@ -69,13 +71,13 @@ def get_xspec_macros(HEADAS):
     xspec_patch = None if match[2] == "" else match[2]
 
     macros = [
-        ('BUILD_Xspec', xspec_version),
-        ('BUILD_Xspec_MAJOR', xspec_major),
-        ('BUILD_Xspec_MINOR', xspec_minor),
-        ('BUILD_Xspec_MICRO', xspec_micro),
+        ("BUILD_Xspec", xspec_version),
+        ("BUILD_Xspec_MAJOR", xspec_major),
+        ("BUILD_Xspec_MINOR", xspec_minor),
+        ("BUILD_Xspec_MICRO", xspec_micro),
     ]
 
     if xspec_patch is not None:
-        macros.append(('BUILD_Xspec_PATCH', xspec_patch))
+        macros.append(("BUILD_Xspec_PATCH", xspec_patch))
 
     return xspec_version, macros

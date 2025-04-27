@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 try:
     from ._compiled import *
+
     __version__ = _compiled.__version__
     __INITIALIZED__ = True
 except ImportError as ie:
@@ -88,7 +89,7 @@ class XspecModel:
 
 
 _info = {
-##PYINFO##
+    ##PYINFO##
 }
 
 
@@ -137,8 +138,9 @@ def info(model: str) -> XspecModel:
 
 
 # Do we need Optional here?
-def list_models(modeltype: ModelType | None = None,
-                language: LanguageStyle | None = None) -> list[str]:
+def list_models(
+    modeltype: ModelType | None = None, language: LanguageStyle | None = None
+) -> list[str]:
     """Returns the names of Xspec models from the model.dat file.
 
     This returns the information on the model as taken from the Xspec
@@ -188,7 +190,6 @@ def list_models(modeltype: ModelType | None = None,
 
     out = set()
     for k, v in _info.items():
-
         if modeltype is not None and v.modeltype != modeltype:
             continue
 
