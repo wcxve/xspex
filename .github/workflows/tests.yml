@@ -42,7 +42,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Conda Setup
         run: |
-          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=$PYTHONVER xspec
+          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=${{ matrix.python-version }} xspec
       - name: Install dependencies
         run: |
           python -m pip install -U pip
