@@ -78,7 +78,7 @@ jobs:
           python-version: "3.11"
       - name: Conda Setup
         run: |
-          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec
+          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec xspec-data
       - name: Install dependencies
         run: |
           python -m pip install -U pip
