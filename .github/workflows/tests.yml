@@ -61,14 +61,14 @@ jobs:
       - name: Install Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: test
+          activate-environment: build
           channels: conda-forge,defaults
           channel-priority: true
           mamba-version: "*"
           python-version: "3.11"
       - name: Conda Setup
         run: |
-          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=3.11 xspec
+          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec
       - name: Install dependencies
         run: |
           python -m pip install -U pip
