@@ -18,8 +18,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "jax>=0.4.16",
-    "jaxlib>=0.4.16",
+    "jax>=0.4.16,<0.6.0",
 ]
 dynamic = ["version"]
 
