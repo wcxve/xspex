@@ -26,7 +26,7 @@ class XspecPrimitiveBase(Primitive, ABC):
         if name not in xspex.list_models():
             raise ValueError(f"Xspec v{xspex.version()} has no '{name}' model")
 
-        super().__init__(f"XS{name}")
+        super().__init__(f'XS{name}')
         self._model_name = name
         self._nparam = len(xspex.info(name).parameters)
 
@@ -35,7 +35,7 @@ class XspecPrimitiveBase(Primitive, ABC):
 
         self.def_abstract_eval(self.get_abstract_eval())
 
-        mlir.register_lowering(self, self.lowering, platform="cpu")
+        mlir.register_lowering(self, self.lowering, platform='cpu')
 
         batching.primitive_batchers[self] = self.batching
 
@@ -58,7 +58,7 @@ class XspecPrimitiveBase(Primitive, ABC):
         pass
 
     def jvp(self, primals, tangents):
-        raise NotImplementedError(f"JVP is not implemented for {self}")
+        raise NotImplementedError(f'JVP is not implemented for {self}')
 
 
 class XspecPrimitive(XspecPrimitiveBase):
@@ -72,13 +72,13 @@ class XspecPrimitive(XspecPrimitiveBase):
         def abstract_eval(params, egrid, spec_num):
             params_shape = jnp.shape(params)
             if params_shape == () or params_shape[-1] != npar:
-                raise ValueError(f"{name} params shape must be (..., {npar})")
+                raise ValueError(f'{name} params shape must be (..., {npar})')
             egrid_shape = jnp.shape(egrid)
             if len(egrid_shape) != 1:
-                raise ValueError("egrid must be 1D array")
+                raise ValueError('egrid must be 1D array')
             spec_num_shape = jnp.shape(spec_num)
             if len(spec_num_shape):
-                raise ValueError("spec_num must be a integer")
+                raise ValueError('spec_num must be a integer')
 
             shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
             dtype = jax.dtypes.canonicalize_dtype(egrid.dtype)
@@ -90,11 +90,11 @@ class XspecPrimitive(XspecPrimitiveBase):
         egrid_type = mlir.ir.RankedTensorType(egrid.type)
         etype = egrid_type.element_type
         if isinstance(etype, mlir.ir.F32Type):
-            call_target_name = f"{self._model_name}_f32"
+            call_target_name = f'{self._model_name}_f32'
         elif isinstance(etype, mlir.ir.F64Type):
-            call_target_name = f"{self._model_name}_f64"
+            call_target_name = f'{self._model_name}_f64'
         else:
-            raise NotImplementedError(f"unsupported dtype {etype}")
+            raise NotImplementedError(f'unsupported dtype {etype}')
         out_shape = ctx.avals_out[0].shape
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
@@ -109,9 +109,9 @@ class XspecPrimitive(XspecPrimitiveBase):
 
     def batching(self, vector_arg_values, batch_axes):
         if batch_axes[1] is not None:
-            raise NotImplementedError("egrid batching is not implemented")
+            raise NotImplementedError('egrid batching is not implemented')
         if batch_axes[2] is not None:
-            raise NotImplementedError("spec_num batching is not implemented")
+            raise NotImplementedError('spec_num batching is not implemented')
 
         params, egrid, spec_num = vector_arg_values
         params = jnp.moveaxis(params, batch_axes[0], 0)
@@ -160,20 +160,22 @@ class XspecConvPrimitive(XspecPrimitiveBase):
         def abstract_eval(params, egrid, flux, spec_num):
             params_shape = jnp.shape(params)
             if params_shape == () or params_shape[-1] != npar:
-                raise ValueError(f"{name} params shape must be (..., {npar})")
+                raise ValueError(f'{name} params shape must be (..., {npar})')
             egrid_shape = jnp.shape(egrid)
             if len(egrid_shape) != 1:
-                raise ValueError("egrid must be 1D array")
+                raise ValueError('egrid must be 1D array')
             flux_shape = jnp.shape(flux)
             if flux_shape == () or flux_shape[-1] != egrid_shape[-1] - 1:
-                raise ValueError("flux shape must be (..., len(egrid) - 1)")
+                raise ValueError('flux shape must be (..., len(egrid) - 1)')
             spec_num_shape = jnp.shape(spec_num)
             if len(spec_num_shape):
-                raise ValueError("spec_num must be a integer")
+                raise ValueError('spec_num must be a integer')
 
             if len(params_shape) > 1 and len(flux_shape) > 1:
                 if params_shape[:-1] != flux_shape[:-1]:
-                    raise ValueError("params and flux should have the same batch size")
+                    raise ValueError(
+                        'params and flux should have the same batch size'
+                    )
             if len(params_shape) >= len(flux_shape):
                 shape = params_shape[:-1] + (egrid_shape[-1] - 1,)
             else:
@@ -187,11 +189,11 @@ class XspecConvPrimitive(XspecPrimitiveBase):
         egrid_type = mlir.ir.RankedTensorType(egrid.type)
         etype = egrid_type.element_type
         if isinstance(etype, mlir.ir.F32Type):
-            call_target_name = f"{self._model_name}_f32"
+            call_target_name = f'{self._model_name}_f32'
         elif isinstance(etype, mlir.ir.F64Type):
-            call_target_name = f"{self._model_name}_f64"
+            call_target_name = f'{self._model_name}_f64'
         else:
-            raise NotImplementedError(f"unsupported dtype {etype}")
+            raise NotImplementedError(f'unsupported dtype {etype}')
 
         params_shape = ctx.avals_in[0].shape
         params_batch = mlir.ir_constant(prod(params_shape[:-1]))
@@ -206,16 +208,24 @@ class XspecConvPrimitive(XspecPrimitiveBase):
         return custom_call(
             call_target_name,
             result_types=[out_type],
-            operands=[params, egrid, flux, spec_num, out_n, params_batch, flux_batch],
+            operands=[
+                params,
+                egrid,
+                flux,
+                spec_num,
+                out_n,
+                params_batch,
+                flux_batch,
+            ],
             operand_layouts=avals_to_layouts(ctx.avals_in) + [()] * 3,
             result_layouts=avals_to_layouts(ctx.avals_out),
         ).results
 
     def batching(self, vector_arg_values, batch_axes):
         if batch_axes[1] is not None:
-            raise NotImplementedError("egrid batching is not implemented")
+            raise NotImplementedError('egrid batching is not implemented')
         if batch_axes[3] is not None:
-            raise NotImplementedError("spec_num batching is not implemented")
+            raise NotImplementedError('spec_num batching is not implemented')
 
         params, egrid, flux, spec_num = vector_arg_values
         if batch_axes[0] is not None:
@@ -253,7 +263,8 @@ def get_primitive(
     model = str(model)
     check = model.casefold()
     p = next(
-        (v for k, v in XSModel["primitive"].items() if k.casefold() == check), None
+        (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
+        None,
     )
     if p is None:
         raise ValueError(f"Unrecognized Xspec model '{model}'")
@@ -262,7 +273,7 @@ def get_primitive(
 
 
 for k, v in xspex.xla_registrations().items():
-    xla_client.register_custom_call_target(k, v, platform="cpu")
+    xla_client.register_custom_call_target(k, v, platform='cpu')
 
 add = xspex.list_models(xspex.ModelType.Add)
 mul = xspex.list_models(xspex.ModelType.Mul)
@@ -270,9 +281,9 @@ con = xspex.list_models(xspex.ModelType.Con)
 primitive = {m: XspecPrimitive(m) for m in add + mul}
 primitive |= {m: XspecConvPrimitive(m) for m in con}
 XSModel = {
-    "add": {m: xspex.info(m) for m in add},
-    "mul": {m: xspex.info(m) for m in mul},
-    "con": {m: xspex.info(m) for m in con},
-    "primitive": primitive,
+    'add': {m: xspex.info(m) for m in add},
+    'mul': {m: xspex.info(m) for m in mul},
+    'con': {m: xspex.info(m) for m in con},
+    'primitive': primitive,
 }
 del k, v, add, mul, con, primitive

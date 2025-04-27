@@ -11,8 +11,8 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 # for the checks below. If we didn't set them here then it
 # would depend on the user's ~/.xspec/Xspec.init file
 #
-x.abundance("lodd")
-x.cross_section("vern")
+x.abundance('lodd')
+x.cross_section('vern')
 
 
 def get_dtype(model):
@@ -29,16 +29,16 @@ def get_dtype(model):
 def test_have_version():
     """Minimal chekc of get_versino"""
     v = x.version()
-    assert v != ""
-    assert len(v.split(".")) == 3, v
+    assert v != ''
+    assert len(v.split('.')) == 3, v
 
 
 def test_default_abundance():
-    assert x.abundance() == "lodd"
+    assert x.abundance() == 'lodd'
 
 
 def test_default_cross_section():
-    assert x.cross_section() == "vern"
+    assert x.cross_section() == 'vern'
 
 
 def test_number_elements():
@@ -47,14 +47,14 @@ def test_number_elements():
 
 
 @pytest.mark.parametrize(
-    "z,name", [(1, "H"), (2, "He"), (17, "Cl"), (29, "Cu"), (30, "Zn")]
+    'z,name', [(1, 'H'), (2, 'He'), (17, 'Cl'), (29, 'Cu'), (30, 'Zn')]
 )
 def test_elementName(z, name):
     assert x.element_name(z) == name
 
 
 @pytest.mark.parametrize(
-    "z,value",
+    'z,value',
     [
         (1, 1.0),
         (2, 0.07919999957084656),
@@ -64,7 +64,7 @@ def test_elementName(z, name):
     ],
 )
 def test_elementAbundance(z, value):
-    x.abundance("lodd")
+    x.abundance('lodd')
     assert x.element_abundance(z) == pytest.approx(value)
     assert x.element_abundance(x.element_name(z)) == pytest.approx(value)
 
@@ -72,7 +72,7 @@ def test_elementAbundance(z, value):
 def test_cosmo_get():
     """Check the values we set above"""
     ans = x.cosmology()
-    assert ans == pytest.approx({"H0": 70, "lambda0": 0.73, "q0": 0.0})
+    assert ans == pytest.approx({'H0': 70, 'lambda0': 0.73, 'q0': 0.0})
 
 
 def test_has_wabs_info():
@@ -82,13 +82,13 @@ def test_has_wabs_info():
     for it.
     """
 
-    assert "wabs" in x.list_models()
-    assert "wabs" in x.list_models(modeltype=x.ModelType.Mul)
-    assert "wabs" not in x.list_models(modeltype=x.ModelType.Add)
-    assert "wabs" not in x.list_models(modeltype=x.ModelType.Con)
+    assert 'wabs' in x.list_models()
+    assert 'wabs' in x.list_models(modeltype=x.ModelType.Mul)
+    assert 'wabs' not in x.list_models(modeltype=x.ModelType.Add)
+    assert 'wabs' not in x.list_models(modeltype=x.ModelType.Con)
 
-    model = x.info("wabs")
-    assert model.name == "wabs"
+    model = x.info('wabs')
+    assert model.name == 'wabs'
     assert model.modeltype == x.ModelType.Mul
     assert len(model.parameters) == 1
 
@@ -99,7 +99,7 @@ def test_has_wabs_info():
     assert model.language == x.LanguageStyle.F77Style4
 
     par = model.parameters[0]
-    assert par.name == "nH"
+    assert par.name == 'nH'
     assert par.default == pytest.approx(1.0)
     assert not par.frozen
 
@@ -107,9 +107,10 @@ def test_has_wabs_info():
 WABS_MODEL = [8.8266723e-05, 2.3582002e-02, 1.5197776e-01]
 
 
-@pytest.mark.parametrize("pars", [[0.1], (0.1,), np.asarray([0.1])])
+@pytest.mark.parametrize('pars', [[0.1], (0.1,), np.asarray([0.1])])
 @pytest.mark.parametrize(
-    "energies", [[0.1, 0.2, 0.3, 0.4], (0.1, 0.2, 0.3, 0.4), np.arange(0.1, 0.5, 0.1)]
+    'energies',
+    [[0.1, 0.2, 0.3, 0.4], (0.1, 0.2, 0.3, 0.4), np.arange(0.1, 0.5, 0.1)],
 )
 def test_eval_wabs(pars, energies):
     """Explicit tests of a model.
@@ -131,8 +132,8 @@ def test_eval_wabs(pars, energies):
 #
 # grbjet occasional failures has been reported to XSPEC (in 12.12.0).
 #
-# rfxconv and xilconv require additinal setup (e.g. energy range) that I have no
-# energy to diesntangle, so we skip
+# rfxconv and xilconv require additinal setup (e.g. energy range) that I have
+# no energy to diesntangle, so we skip
 #
 # rgsxsrc requires extra setup (an image file)
 #
@@ -140,12 +141,12 @@ MODELS_ADD = x.list_models(modeltype=x.ModelType.Add)
 MODELS_MUL = x.list_models(modeltype=x.ModelType.Mul)
 MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
-MODELS_ADD_SKIP = ["grbjet"]
+MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ["rfxconv", "rgsxsrc", "xilconv"]
+MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'xilconv']
 
 
-@pytest.mark.parametrize("model", MODELS_ADD)
+@pytest.mark.parametrize('model', MODELS_ADD)
 def test_eval_add(model):
     """Evaluate an additive model.
 
@@ -158,15 +159,16 @@ def test_eval_add(model):
 
     info = x.info(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_ADD_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     mfunc = getattr(x, model)
 
     pars = [
-        0.1 if p.name.casefold() == "redshift" else p.default for p in info.parameters
+        0.1 if p.name.casefold() == 'redshift' else p.default
+        for p in info.parameters
     ]
 
     egrid = np.arange(0.1, 10, 0.01)
@@ -175,14 +177,14 @@ def test_eval_add(model):
     assert (y1 > 0).any()
 
 
-@pytest.mark.parametrize("model", MODELS_MUL)
+@pytest.mark.parametrize('model', MODELS_MUL)
 def test_eval_mul(model):
     """Evaluate a multiplicative model."""
 
     info = x.info(model)
 
     if model in MODELS_MUL_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     mfunc = getattr(x, model)
 
@@ -194,31 +196,31 @@ def test_eval_mul(model):
     assert (y1 > 0).any()
 
 
-@pytest.mark.parametrize("model", MODELS_CON)
+@pytest.mark.parametrize('model', MODELS_CON)
 def test_eval_con(model):
     """Evaluate a convolution additive model."""
 
     info = x.info(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_CON_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     egrid = np.arange(0.1, 10, 0.01)
 
     def conv(p):
         """what is the default parameter value?"""
 
-        if p.name.casefold() == "redshift":
+        if p.name.casefold() == 'redshift':
             return 0.01
 
-        if p.name.casefold() == "velocity":
+        if p.name.casefold() == 'velocity':
             return 100
 
         return p.default
 
-    pars = [p.default for p in x.info("powerlaw").parameters]
+    pars = [p.default for p in x.info('powerlaw').parameters]
     mvals = x.powerlaw(energies=egrid, pars=pars)
     mvals = mvals.astype(get_dtype(info))
     ymodel = mvals.copy()

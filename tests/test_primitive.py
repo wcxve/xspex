@@ -5,7 +5,7 @@ import pytest
 
 import xspex as x
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update('jax_enable_x64', True)
 
 # We need to set up the cosmology as this is currently not done in FNINIT.
 #
@@ -15,8 +15,8 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 # for the checks below. If we didn't set them here then it
 # would depend on the user's ~/.xspec/Xspec.init file
 #
-x.abundance("lodd")
-x.cross_section("vern")
+x.abundance('lodd')
+x.cross_section('vern')
 
 
 def test_powerlaw_primitive():
@@ -26,7 +26,7 @@ def test_powerlaw_primitive():
         f = e**p / p
         return f[1:] - f[:-1]
 
-    powerlaw, _ = x.get_primitive("powerlaw")
+    powerlaw, _ = x.get_primitive('powerlaw')
     params = jnp.array([1.5])
     egrid = jnp.arange(1.0, 10.0, 0.1)
 
@@ -63,8 +63,8 @@ def test_powerlaw_primitive():
 #
 # grbjet occasional failures has been reported to XSPEC (in 12.12.0).
 #
-# rfxconv and xilconv require additinal setup (e.g. energy range) that I have no
-# energy to diesntangle, so we skip
+# rfxconv and xilconv require additinal setup (e.g. energy range) that I have
+# no energy to diesntangle, so we skip
 #
 # rgsxsrc requires extra setup (an image file)
 #
@@ -72,24 +72,25 @@ MODELS_ADD = x.list_models(modeltype=x.ModelType.Add)
 MODELS_MUL = x.list_models(modeltype=x.ModelType.Mul)
 MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
-MODELS_ADD_SKIP = ["grbjet"]
+MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ["rfxconv", "rgsxsrc", "xilconv"]
+MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'xilconv']
 
 
-@pytest.mark.parametrize("model", MODELS_ADD + MODELS_MUL)
+@pytest.mark.parametrize('model', MODELS_ADD + MODELS_MUL)
 def test_eval(model):
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_ADD_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     mfunc = getattr(x, model)
 
     pars = [
-        0.1 if p.name.casefold() == "redshift" else p.default for p in info.parameters
+        0.1 if p.name.casefold() == 'redshift' else p.default
+        for p in info.parameters
     ]
     pars = np.array(pars)
 
@@ -102,30 +103,30 @@ def test_eval(model):
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_CON)
+@pytest.mark.parametrize('model', MODELS_CON)
 def test_eval_con(model):
     """Evaluate a convolution additive model."""
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_CON_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     egrid = np.arange(0.1, 10, 0.01)
 
     def conv(p):
         """what is the default parameter value?"""
 
-        if p.name.casefold() == "redshift":
+        if p.name.casefold() == 'redshift':
             return 0.01
 
-        if p.name.casefold() == "velocity":
+        if p.name.casefold() == 'velocity':
             return 100.0
 
         return p.default
 
-    pars = [p.default for p in x.info("powerlaw").parameters]
+    pars = [p.default for p in x.info('powerlaw').parameters]
     pars = np.array(pars)
     mvals = x.powerlaw(energies=egrid, pars=pars)
     # mvals = mvals.astype(get_dtype(info))
@@ -144,23 +145,25 @@ def test_eval_con(model):
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_ADD + MODELS_MUL)
+@pytest.mark.parametrize('model', MODELS_ADD + MODELS_MUL)
 def test_batching(model):
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_ADD_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
-    if model == "posm":
-        pytest.skip(f"Model {model} has no shape parameter.")
+    if model == 'posm':
+        pytest.skip(f'Model {model} has no shape parameter.')
 
     mfunc = getattr(x, model)
 
     n = 5
     pars = [
-        np.full(n, 0.1) if p.name.casefold() == "redshift" else np.full(n, p.default)
+        np.full(n, 0.1)
+        if p.name.casefold() == 'redshift'
+        else np.full(n, p.default)
         for p in info.parameters
     ]
     pars = np.column_stack(pars)
@@ -168,36 +171,38 @@ def test_batching(model):
     egrid = np.arange(0.1, 10, 0.01)
     y1 = np.array([mfunc(energies=egrid, pars=p) for p in pars])
     y2 = jax.vmap(p, in_axes=(0, None, None), out_axes=0)(pars, egrid, 1)
-    y3 = jax.jit(jax.vmap(p, in_axes=(1, None, None), out_axes=0))(pars.T, egrid, 1)
+    y3 = jax.jit(jax.vmap(p, in_axes=(1, None, None), out_axes=0))(
+        pars.T, egrid, 1
+    )
 
     assert np.allclose(y1, y2)
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_CON)
+@pytest.mark.parametrize('model', MODELS_CON)
 def test_batching_con(model):
     """Evaluate a convolution additive model."""
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_CON_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     egrid = np.arange(0.1, 10, 0.01)
 
     def conv(p):
         """what is the default parameter value?"""
 
-        if p.name.casefold() == "redshift":
+        if p.name.casefold() == 'redshift':
             return 0.01
 
-        if p.name.casefold() == "velocity":
+        if p.name.casefold() == 'velocity':
             return 100.0
 
         return p.default
 
-    pars = [p.default for p in x.info("powerlaw").parameters]
+    pars = [p.default for p in x.info('powerlaw').parameters]
     pars = np.array(pars)
     mvals = x.powerlaw(energies=egrid, pars=pars)
     # mvals = mvals.astype(get_dtype(info))
@@ -208,7 +213,9 @@ def test_batching_con(model):
     n = 5
     pars = np.column_stack([np.full(n, conv(p)) for p in info.parameters])
     y1 = np.array([mfunc(energies=egrid, pars=p, model=mvals) for p in pars])
-    y2 = jax.vmap(p, in_axes=(0, None, None, None), out_axes=0)(pars, egrid, mvals, 1)
+    y2 = jax.vmap(p, in_axes=(0, None, None, None), out_axes=0)(
+        pars, egrid, mvals, 1
+    )
     y3 = jax.jit(jax.vmap(p, in_axes=(0, None, None, None), out_axes=0))(
         pars, egrid, mvals, 1
     )
@@ -216,7 +223,9 @@ def test_batching_con(model):
     y4 = jax.vmap(p, in_axes=(None, None, 0, None), out_axes=0)(
         pars[0], egrid, mvals_n, 1
     )
-    y5 = jax.vmap(p, in_axes=(0, None, 0, None), out_axes=0)(pars, egrid, mvals_n, 1)
+    y5 = jax.vmap(p, in_axes=(0, None, 0, None), out_axes=0)(
+        pars, egrid, mvals_n, 1
+    )
 
     assert (y1 > 0).any()
     assert np.any(y1 != ymodel)

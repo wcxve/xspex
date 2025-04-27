@@ -41,6 +41,29 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+format.quote-style = "single"
+lint.extend-select = ["Q"]
+lint.flake8-quotes.inline-quotes = "single"
+lint.ignore = [
+    "B028",  # allow warnings without stacklevel
+    "C901",  # allow functions with a high complexity
+    "E731",  # allow lambda functions
+]
+lint.isort.known-first-party = ["src"]
+lint.isort.combine-as-imports = true
+lint.select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP",  # pyupgrade
+]
+
 [tool.pytest]
 ini_options.addopts = "--cov=xspex --cov-report xml"
 
