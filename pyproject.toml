@@ -1,8 +1,64 @@
+[project]
+name = "xspex"
+description = "Access Xspec models and corresponding JAX/XLA ops."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "GPL-3.0-or-later"
+authors = [
+    {name = "Wang-Chen Xue", email = "wcxuemail@gmail.com"},
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+platforms = ["Linux", "Mac OS X"]
+dependencies = [
+    "numpy",
+    "jax>=0.4.16",
+    "jaxlib>=0.4.16",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = ["coverage[toml]", "pytest", "pytest-cov"]
+
+[project.urls]
+Documentation = "https://github.com/wcxve/xspex#readme"
+Issues = "https://github.com/wcxve/xspex/issues"
+Source = "https://github.com/wcxve/xspex"
+
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=64.0.0",
     "wheel",
     "pybind11>=2.10.0",
     "parse-xspec==0.1.0",
 ]
 build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+test = [
+    "coverage[toml]",
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest]
+ini_options.addopts = "--cov=xspex --cov-report xml"
+
+[tool.coverage]
+run.branch = true
+run.parallel = true
+run.source = ["src/"]
+paths.source = ["src/", "*/site-packages"]
+report.exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+report.show_missing = true
