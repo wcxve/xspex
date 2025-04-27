@@ -11,6 +11,10 @@ on:
       - "README.md"
   pull_request:
 
+env:
+  XSPECCHAN: "https://heasarc.gsfc.nasa.gov/FTP/software/conda/"
+  XSPECVER: "12.15.0"
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -23,10 +27,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          activate-environment: test
+          mamba-version: latest
           python-version: ${{ matrix.python-version }}
+      - name: Conda Setup
+        run: |
+          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=$PYTHONVER xspec
       - name: Install dependencies
         run: |
           python -m pip install -U pip
@@ -47,10 +56,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
-        name: Install Python
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          activate-environment: test
+          mamba-version: latest
           python-version: "3.11"
+      - name: Conda Setup
+        run: |
+          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=3.11 xspec
       - name: Install dependencies
         run: |
           python -m pip install -U pip
