@@ -8,7 +8,8 @@ from math import prod
 
 import jax
 import jax.numpy as jnp
-from jax.core import Primitive, ShapedArray
+from jax.core import ShapedArray
+from jax.extend.core import Primitive
 from jax.interpreters import ad, batching, mlir, xla
 from jax.lib import xla_client
 from jaxlib.hlo_helpers import custom_call
