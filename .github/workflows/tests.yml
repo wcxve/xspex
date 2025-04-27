@@ -31,7 +31,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: test
-          mamba-version: latest
+          mamba-version: "*"
           python-version: ${{ matrix.python-version }}
       - name: Conda Setup
         run: |
@@ -60,7 +60,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: test
-          mamba-version: latest
+          mamba-version: "*"
           python-version: "3.11"
       - name: Conda Setup
         run: |
