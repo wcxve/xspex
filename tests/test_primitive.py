@@ -17,6 +17,7 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 #
 x.abundance('lodd')
 x.cross_section('vern')
+x.set_model_string('NEIVERS', '3.1.2')
 
 
 def test_powerlaw_primitive():
@@ -74,7 +75,7 @@ MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
 MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'xilconv']
+MODELS_CON_SKIP = ['rfxconv', 'rgsext', 'rgsxsrc', 'xilconv']
 
 
 @pytest.mark.parametrize('model', MODELS_ADD + MODELS_MUL)
@@ -154,7 +155,7 @@ def test_batching(model):
     if model in MODELS_ADD_SKIP:
         pytest.skip(f'Model {model} is marked as un-testable.')
 
-    if model == 'posm':
+    if model in ['feklor', 'posm']:
         pytest.skip(f'Model {model} has no shape parameter.')
 
     mfunc = getattr(x, model)

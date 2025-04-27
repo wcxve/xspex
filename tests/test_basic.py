@@ -13,6 +13,7 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 #
 x.abundance('lodd')
 x.cross_section('vern')
+x.set_model_string('NEIVERS', '3.1.2')
 
 
 def get_dtype(model):
@@ -143,7 +144,7 @@ MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
 MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'xilconv']
+MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'rgsxsrc', 'xilconv']
 
 
 @pytest.mark.parametrize('model', MODELS_ADD)
