@@ -31,6 +31,8 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: test
+          channels: conda-forge,defaults
+          channel-priority: true
           mamba-version: "*"
           python-version: ${{ matrix.python-version }}
       - name: Conda Setup
@@ -60,6 +62,8 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: test
+          channels: conda-forge,defaults
+          channel-priority: true
           mamba-version: "*"
           python-version: "3.11"
       - name: Conda Setup
