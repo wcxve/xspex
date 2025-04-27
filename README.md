@@ -27,7 +27,7 @@ import xspex
 # For accuracy, it is recommended to enable double precision
 jax.config.update('jax_enable_x64', True)
 
-# Get APEC model primitive, whose JVP rule is defined by finite difference 
+# Get APEC model primitive, whose JVP rule is defined by finite difference
 apec, info = xspex.get_primitive('apec')
 
 # Evaluate the model via JAX primitive
