@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(__file__))
 from helpers import template
 from helpers.identify_xspec import get_xspec_macros
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 # Check HEASARC is set up. The following does not provide a useful
 # message from 'pip install' so how do we make it more meaningful?
@@ -25,8 +25,21 @@ if HEADAS is None:
 
 HEADAS = pathlib.Path(HEADAS)
 
-modelfile = HEADAS / '../spectral/manager/model.dat'
-modelfile = modelfile.resolve()
+modelfile_found = False
+search_path = []
+for i in ['..', '.']:
+    modelfile = HEADAS / i / 'spectral/manager/model.dat'
+    modelfile = modelfile.resolve()
+
+    if modelfile.is_file():
+        modelfile_found = True
+        break
+    else:
+        search_path.append(str(modelfile))
+
+if not modelfile_found:
+    sys.stderr.write(f'ERROR: unable to find model.dat {search_path}\n')
+    sys.exit(1)
 
 out_dir = pathlib.Path('src')
 out_dir.mkdir(exist_ok=True)
