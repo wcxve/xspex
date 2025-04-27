@@ -42,7 +42,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Conda Setup
         run: |
-          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=${{ matrix.python-version }} xspec
+          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=${{ matrix.python-version }} xspec xspec-data
       - name: Install dependencies
         run: |
           python -m pip install -U pip
@@ -78,7 +78,7 @@ jobs:
           python-version: "3.11"
       - name: Conda Setup
         run: |
-          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec xspec-data
+          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec
       - name: Install dependencies
         run: |
           python -m pip install -U pip
