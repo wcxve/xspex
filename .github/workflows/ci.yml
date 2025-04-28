@@ -20,15 +20,10 @@ env:
 
 jobs:
   download:
-    name: Download Xspec
+    name: Download Xspec Model Data Package
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_info.outputs.version }}
-      build: ${{ steps.get_info.outputs.build }}
-      fn: ${{ steps.get_info.outputs.fn }}
-      url: ${{ steps.get_info.outputs.url }}
-      data-fn: ${{ steps.get_info.outputs.data-fn }}
-      data-url: ${{ steps.get_info.outputs.data-url }}
+      data-fn: ${{ steps.get_info.outputs.fn }}
     defaults:
       run:
         shell: bash -el {0}
@@ -42,7 +37,7 @@ jobs:
         run: |
           sudo apt-get install -y aria2 jq
 
-      - name: Get Latest Version of Xspec
+      - name: Get Latest Version of Xspec Model Data Package
         id: get_info
         run: |
           get_latest_pkg() {
@@ -58,30 +53,18 @@ jobs:
             '
           }
 
-          xspec=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
-          url=$(echo $xspec | jq -r '.url')
-          fn=$(echo $xspec | jq -r '.fn')
-          version=$(echo $xspec | jq -r '.version')
-          build=$(echo $xspec | jq -r '.build_string')
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "fn=$fn" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "build=$build" >> "$GITHUB_OUTPUT"
-
-          xspec_data=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
-          data_url=$(echo $xspec_data | jq -r '.url')
-          data_fn=$(echo $xspec_data | jq -r '.fn')
-          echo "data-url=$data_url" >> "$GITHUB_OUTPUT"
-          echo "data-fn=$data_fn" >> "$GITHUB_OUTPUT"
-
+          data_pkg=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
+          version=$(echo $data_pkg | jq -r '.version')
+          build=$(echo $data_pkg | jq -r '.build_string')
+          url=$(echo $data_pkg | jq -r '.url')
+          fn=$(echo $data_pkg | jq -r '.fn')
           echo "VERSION=$version" >> "$GITHUB_ENV"
           echo "BUILD=$build" >> "$GITHUB_ENV"
-          echo "FN=$fn" >> "$GITHUB_ENV"
           echo "URL=$url" >> "$GITHUB_ENV"
-          echo "DATA_FN=$data_fn" >> "$GITHUB_ENV"
-          echo "DATA_URL=$data_url" >> "$GITHUB_ENV"
+          echo "FN=$fn" >> "$GITHUB_ENV"
+          echo "fn=$fn" >> "$GITHUB_OUTPUT"
 
-      - name: Download Xspec ${{ env.VERSION }} (Build ${{ env.BUILD }})
+      - name: Download Xspec Model Data Package ${{ env.VERSION }} (Build ${{ env.BUILD }})
         run: |
           aria2c -x 16 -s 16 --show-console-readout=true "$URL"
           if [ ! -f "$FN" ]; then
@@ -89,101 +72,43 @@ jobs:
             exit 1  # Exit with a non-zero status to fail the job
           fi
 
-#          aria2c -x 16 -s 16 --show-console-readout=true "$DATA_URL"
-#          if [ ! -f "$DATA_FN" ]; then
-#            echo "Failed to download from $DATA_URL"
-#            exit 1  # Exit with a non-zero status to fail the job
-#          fi
-
-      - name: Upload Xspec Package as Artifact
+      - name: Upload Xspec Model Data Package as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FN }}
           path: ${{ env.FN }}
           retention-days: 1
-#
-#      - name: Upload Xspec Model Data Package as Artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: ${{ env.DATA_FN }}
-#          path: ${{ env.DATA_FN }}
-#          retention-days: 1
-#
-#  tests:
-#    name: ${{ matrix.name }}
-#    runs-on: ${{ matrix.os }}
-#    needs: download
-#    strategy:
-#      matrix:
-#        include:
-#          - name: Tests (Linux-x86, Python 3.9, Xspec ${{ needs.download.outputs.version }})
-#            os: "ubuntu-latest"
-#            python-version: 3.9
-#
-#          - name: Tests (Linux-x86, Python 3.10, Xspec ${{ needs.download.outputs.version }})
-#            os: "ubuntu-latest"
-#            python-version: 3.10
-#
-#          - name: Tests (Linux-x86, Python 3.11, Xspec ${{ needs.download.outputs.version }})
-#            os: "ubuntu-latest"
-#            python-version: 3.11
-#
-#          - name: Tests (Linux-x86, Python 3.12, Xspec ${{ needs.download.outputs.version }})
-#            os: "ubuntu-latest"
-#            python-version: 3.12
-#
-#          - name: Tests (Linux-arm64, Python 3.12, Xspec ${{ needs.download.outputs.version }})
-#            os: "ubuntu-24.04-arm"
-#            python-version: 3.12
-#
-#          - name: Tests (macOS-arm64, Python 3.12, Xspec ${{ needs.download.outputs.version }})
-#            os: "macos-latest"
-#            python-version: 3.12
-#    env:
-#      PYTHON_VERSION: ${{ matrix.python-version }}
-#      XSPEC_FN: ${{ needs.download.outputs.fn }}
-#      XSPEC_DATA_FN: ${{ needs.download.outputs.data-fn }}
-#    defaults:
-#      run:
-#        shell: bash -el {0}
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Download Xspec Package
-#        uses: actions/download-artifact@v4
-#
-#      - name: Install Miniforge
-#        uses: conda-incubator/setup-miniconda@v3
-#        with:
-#          miniforge-version: latest
-#          python-version: ${{ env.PYTHON_VERSION }}
-#
-#      - name: Install Xspec
-#        run: |
-#          mamba install $XSPEC_FN $XSPEC_DATA_FN -c local -y
-#
-#      - name: Install Python Dependencies
-#        run: |
-#          pip install ".[test]" --verbose
-#
-#      - name: Run Tests
-#        run: |
-#          pytest
-#
-#      - name: Upload Coverage Results
-#        uses: codecov/codecov-action@v5
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          fail_ci_if_error: true
-#          verbose: true
 
-  build:
-    name: Build Source Distribution
-    runs-on: ubuntu-latest
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     needs: download
-    env:
-      XSPEC_FN: ${{ needs.download.outputs.fn }}
+    strategy:
+      matrix:
+        include:
+          - name: Tests (Linux-x86, Python 3.9)
+            os: "ubuntu-latest"
+            python-version: 3.9
+
+          - name: Tests (Linux-x86, Python 3.10)
+            os: "ubuntu-latest"
+            python-version: 3.10
+
+          - name: Tests (Linux-x86, Python 3.11)
+            os: "ubuntu-latest"
+            python-version: 3.11
+
+          - name: Tests (Linux-x86, Python 3.12)
+            os: "ubuntu-latest"
+            python-version: 3.12
+
+          - name: Tests (Linux-arm64, Python 3.12)
+            os: "ubuntu-24.04-arm"
+            python-version: 3.12
+
+          - name: Tests (macOS-arm64, Python 3.12)
+            os: "macos-latest"
+            python-version: 3.12
     defaults:
       run:
         shell: bash -el {0}
@@ -191,10 +116,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Xspec Package
+      - name: Download Xspec Model Data Package
         uses: actions/download-artifact@v4
+
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          name: ${{ env.XSPEC_FN }}
+          miniforge-version: latest
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Xspec
+        run: |
+          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
+          conda install ${{ needs.download.outputs.data-fn }} -c local -y
+
+      - name: Install Python Dependencies
+        run: |
+          pip install ".[test]" --verbose
+
+      - name: Run Tests
+        run: |
+          pytest
+
+      - name: Upload Coverage Results
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  build:
+    name: Build Source Distribution
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -204,7 +163,7 @@ jobs:
 
       - name: Install Xspec
         run: |
-          mamba install --use-local $XSPEC_FN -c $HEASARC_CHANNEL -c conda-forge -y
+          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Python Dependencies
         run: |
@@ -221,22 +180,22 @@ jobs:
           name: xspex
           path: dist/*
 
-#  publish:
-#    name: Publish to PyPI
-#    runs-on: ubuntu-latest
-#    needs: [tests, build]
-#    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-#    environment:
-#      name: PyPI
-#      url: https://pypi.org/p/xspex
-#    permissions:
-#      id-token: write
-#    steps:
-#      - name: Download Source Distribution
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: xspex
-#          path: dist
-#
-#      - name: Publish to PyPI
-#        uses: pypa/gh-action-pypi-publish@v1.12.4
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [tests, build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: PyPI
+      url: https://pypi.org/p/xspex
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Source Distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: xspex
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.4
