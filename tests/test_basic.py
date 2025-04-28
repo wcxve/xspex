@@ -144,7 +144,7 @@ MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
 MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'rgsxsrc', 'xilconv']
+MODELS_CON_SKIP = ['rfxconv', 'rgsext', 'rgsxsrc', 'xilconv']
 
 
 @pytest.mark.parametrize('model', MODELS_ADD)
