@@ -118,6 +118,8 @@ jobs:
 
       - name: Download Xspec Model Data
         uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.download.outputs.data-fn }}
 
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -128,7 +130,7 @@ jobs:
       - name: Install Xspec
         run: |
           mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
-          conda install ${{ needs.download.outputs.data-fn }} -c local -y
+          conda install --use-local ${{ needs.download.outputs.data-fn }} -y
 
       - name: Install Python Dependencies
         run: |
