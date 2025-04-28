@@ -102,10 +102,6 @@ jobs:
             os: "ubuntu-latest"
             python-version: "3.12"
 
-          - name: Tests (Linux-arm64, Python 3.12)
-            os: "ubuntu-24.04-arm"
-            python-version: "3.12"
-
           - name: Tests (macOS-arm64, Python 3.12)
             os: "macos-latest"
             python-version: "3.12"
