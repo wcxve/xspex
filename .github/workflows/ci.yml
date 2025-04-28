@@ -204,7 +204,7 @@ jobs:
 
       - name: Install Xspec
         run: |
-          mamba install $XSPEC_FN -c local -c $HEASARC_CHANNEL -c conda-forge -y
+          mamba install --use-local $XSPEC_FN -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Python Dependencies
         run: |
