@@ -89,11 +89,11 @@ jobs:
             exit 1  # Exit with a non-zero status to fail the job
           fi
 
-          aria2c -x 16 -s 16 --show-console-readout=true "$DATA_URL"
-          if [ ! -f "$DATA_FN" ]; then
-            echo "Failed to download from $DATA_URL"
-            exit 1  # Exit with a non-zero status to fail the job
-          fi
+#          aria2c -x 16 -s 16 --show-console-readout=true "$DATA_URL"
+#          if [ ! -f "$DATA_FN" ]; then
+#            echo "Failed to download from $DATA_URL"
+#            exit 1  # Exit with a non-zero status to fail the job
+#          fi
 
       - name: Upload Xspec Package as Artifact
         uses: actions/upload-artifact@v4
