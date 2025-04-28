@@ -1,7 +1,6 @@
 import glob
 import os
 import pathlib
-import platform
 import sys
 import sysconfig
 
@@ -24,21 +23,24 @@ if HEADAS is None:
 
 HEADAS = pathlib.Path(HEADAS)
 
-modelfile_found = False
-search_path = []
-for i in ['..', '.']:
-    modelfile = HEADAS / i / 'spectral/manager/model.dat'
-    modelfile = modelfile.resolve()
+# In the HEASoft Conda distribution, the spectral directory is located under
+# $HEADAS/spectral. However, in the Xspec source code,
+# Xspec/src/XSFunctions/Utilities/xsFortran.cxx, line 198,
+# the spectral path is hardcoded as $HEADAS/../spectral/.
+# This mismatch can lead to file access errors during runtime.
+# The temporary Solution is to manually create a symbolic link pointing to
+# the correct spectral directory location.
+spectral_path = HEADAS / '../spectral'
+spectral_path = spectral_path.resolve()
+if not spectral_path.exists():
+    alt_path = HEADAS / 'spectral'
+    alt_path = alt_path.resolve()
+    if alt_path.exists() and alt_path.is_dir():
+        link = HEADAS / '../spectral'
+        link.symlink_to(alt_path, target_is_directory=True)
 
-    if modelfile.is_file():
-        modelfile_found = True
-        break
-    else:
-        search_path.append(str(modelfile))
-
-if not modelfile_found:
-    sys.stderr.write(f'ERROR: unable to find model.dat {search_path}\n')
-    sys.exit(1)
+modelfile = HEADAS / '../spectral/manager/model.dat'
+modelfile = modelfile.resolve()
 
 out_dir = pathlib.Path('src')
 out_dir.mkdir(exist_ok=True)
@@ -52,7 +54,7 @@ out_dir.mkdir(exist_ok=True)
 # There's some attempt to be platform independent, but
 # is it worth it?
 libdir = HEADAS / sysconfig.get_config_var('platlibdir')
-if platform.system() == 'Darwin':
+if sysconfig.get_config_var('WITH_DYLD'):
     suffix = '.dylib'
 else:
     suffix = sysconfig.get_config_var('SHLIB_SUFFIX')
@@ -77,6 +79,11 @@ def match(name):
     head = f'lib{name}-*{suffix}'
     ms = glob.glob(str(libdir / head))
     if len(ms) == 1:
+        return pathlib.Path(ms[0]).stem[3:]
+
+    head = f'lib{name}*{suffix}'
+    ms = glob.glob(str(libdir / head))
+    if len(ms):
         return pathlib.Path(ms[0]).stem[3:]
 
     raise OSError(f'Unable to find a match for lib{name}*{suffix} in {libdir}')
