@@ -81,7 +81,7 @@ jobs:
           echo "DATA_FN=$data_fn" >> "$GITHUB_ENV"
           echo "DATA_URL=$data_url" >> "$GITHUB_ENV"
 
-      - name: Download Xspec $VERSION (Build $BUILD)
+      - name: Download Xspec ${{ env.VERSION }} (Build ${{ env.BUILD }})
         run: |
           aria2c -x 16 -s 16 --show-console-readout=true "$URL"
           if [ ! -f "$FN" ]; then
@@ -98,19 +98,19 @@ jobs:
       - name: Upload Xspec Package as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: $FN
-          path: $FN
+          name: ${{ env.FN }}
+          path: ${{ env.FN }}
           retention-days: 1
 
       - name: Upload Xspec Model Data Package as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: $DATA_FN
-          path: $DATA_FN
+          name: ${{ env.DATA_FN }}
+          path: ${{ env.DATA_FN }}
           retention-days: 1
 
   tests:
-    name: Tests (Python $PYTHON_VERSION, Xspec $XSPEC_VERSION)
+    name: ${{ matrix.name }}
     needs: download
     defaults:
       run:
@@ -118,7 +118,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        include:
+          - name: Tests (Linux-x86, Python 3.9)
+            os: "ubuntu-latest"
+            python-version: 3.9
+
+          - name: Tests (Linux-x86, Python 3.10)
+            os: "ubuntu-latest"
+            python-version: 3.10
+
+          - name: Tests (Linux-x86, Python 3.11)
+            os: "ubuntu-latest"
+            python-version: 3.11
+
+          - name: Tests (Linux-x86, Python 3.12)
+            os: "ubuntu-latest"
+            python-version: 3.12
+
+          - name: Tests (Linux-arm64, Python 3.12)
+            os: "ubuntu-24.04-arm"
+            python-version: 3.12
+
+          - name: Tests (macOS-arm64, Python 3.12)
+            os: "macos-latest"
+            python-version: 3.12
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       XSPEC_VERSION: ${{ needs.download.outputs.version }}
@@ -139,7 +162,7 @@ jobs:
         with:
           activate-environment: test
           miniforge-version: latest
-          python-version: $PYTHON_VERSION
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Setup Conda Env
         run: |
@@ -181,7 +204,7 @@ jobs:
       - name: Download Xspec Package
         uses: actions/download-artifact@v4
         with:
-          name: $XSPEC_FN
+          name: ${{ env.XSPEC_FN }}
 
       - name: Install Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -211,6 +234,7 @@ jobs:
       - name: Upload Source Distribution as Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: xspex
           path: dist/*
 
   publish:
@@ -227,7 +251,7 @@ jobs:
       - name: Download Source Distribution
         uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: xspex
           path: dist
 
       - name: Publish to PyPI
