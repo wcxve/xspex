@@ -20,7 +20,7 @@ env:
 
 jobs:
   download:
-    name: Download Xspec Model Data Package
+    name: Download Xspec Model Data
     runs-on: ubuntu-latest
     outputs:
       data-fn: ${{ steps.get_info.outputs.fn }}
@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get install -y aria2 jq
 
-      - name: Get Latest Version of Xspec Model Data Package
+      - name: Get Latest Version of Xspec Model Data
         id: get_info
         run: |
           get_latest_pkg() {
@@ -64,7 +64,7 @@ jobs:
           echo "FN=$fn" >> "$GITHUB_ENV"
           echo "fn=$fn" >> "$GITHUB_OUTPUT"
 
-      - name: Download Xspec Model Data Package ${{ env.VERSION }} (Build ${{ env.BUILD }})
+      - name: Download Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
         run: |
           aria2c -x 16 -s 16 --show-console-readout=true "$URL"
           if [ ! -f "$FN" ]; then
@@ -72,7 +72,7 @@ jobs:
             exit 1  # Exit with a non-zero status to fail the job
           fi
 
-      - name: Upload Xspec Model Data Package as Artifact
+      - name: Upload Xspec Model Data as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FN }}
@@ -116,7 +116,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Xspec Model Data Package
+      - name: Download Xspec Model Data
         uses: actions/download-artifact@v4
 
       - name: Install Miniforge
