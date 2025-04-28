@@ -17,18 +17,19 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 #
 x.abundance('lodd')
 x.cross_section('vern')
+x.set_model_string('NEIVERS', '3.1.2')
 
 
 def test_powerlaw_primitive():
     @jax.jit
     def pl(p, e, _):
         p = 1 - p
-        f = e ** p / p
+        f = e**p / p
         return f[1:] - f[:-1]
 
     powerlaw, _ = x.get_primitive('powerlaw')
     params = jnp.array([1.5])
-    egrid = jnp.arange(1., 10., 0.1)
+    egrid = jnp.arange(1.0, 10.0, 0.1)
 
     res_true = pl(params, egrid, 1)
     res_test1 = powerlaw(params, egrid, 1)
@@ -41,7 +42,7 @@ def test_powerlaw_primitive():
     tan_in = (
         jnp.r_[1.0],
         jnp.zeros_like(prim_in[1]),
-        np.zeros((), dtype=jax.dtypes.float0)
+        np.zeros((), dtype=jax.dtypes.float0),
     )
     jvp_true = jax.jvp(pl, prim_in, tan_in)
     jvp_test = jax.jvp(powerlaw, prim_in, tan_in)
@@ -63,8 +64,8 @@ def test_powerlaw_primitive():
 #
 # grbjet occasional failures has been reported to XSPEC (in 12.12.0).
 #
-# rfxconv and xilconv require additinal setup (e.g. energy range) that I have no
-# energy to diesntangle, so we skip
+# rfxconv and xilconv require additinal setup (e.g. energy range) that I have
+# no energy to diesntangle, so we skip
 #
 # rgsxsrc requires extra setup (an image file)
 #
@@ -74,22 +75,24 @@ MODELS_CON = x.list_models(modeltype=x.ModelType.Con)
 
 MODELS_ADD_SKIP = ['grbjet']
 MODELS_MUL_SKIP = []
-MODELS_CON_SKIP = ['rfxconv', 'rgsxsrc', 'xilconv']
+MODELS_CON_SKIP = ['rfxconv', 'rgsext', 'rgsxsrc', 'xilconv']
 
 
-@pytest.mark.parametrize("model", MODELS_ADD + MODELS_MUL)
+@pytest.mark.parametrize('model', MODELS_ADD + MODELS_MUL)
 def test_eval(model):
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_ADD_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     mfunc = getattr(x, model)
 
-    pars = [0.1 if p.name.casefold() == 'redshift' else p.default
-            for p in info.parameters]
+    pars = [
+        0.1 if p.name.casefold() == 'redshift' else p.default
+        for p in info.parameters
+    ]
     pars = np.array(pars)
 
     egrid = np.arange(0.1, 10, 0.01)
@@ -101,15 +104,15 @@ def test_eval(model):
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_CON)
+@pytest.mark.parametrize('model', MODELS_CON)
 def test_eval_con(model):
     """Evaluate a convolution additive model."""
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_CON_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     egrid = np.arange(0.1, 10, 0.01)
 
@@ -143,44 +146,49 @@ def test_eval_con(model):
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_ADD + MODELS_MUL)
+@pytest.mark.parametrize('model', MODELS_ADD + MODELS_MUL)
 def test_batching(model):
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_ADD_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
-    if model == 'posm':
-        pytest.skip(f"Model {model} has no shape parameter.")
+    if model in ['feklor', 'posm']:
+        pytest.skip(f'Model {model} has no shape parameter.')
 
     mfunc = getattr(x, model)
 
     n = 5
-    pars = [np.full(n, 0.1) if p.name.casefold() == 'redshift'
-            else np.full(n, p.default)
-            for p in info.parameters]
+    pars = [
+        np.full(n, 0.1)
+        if p.name.casefold() == 'redshift'
+        else np.full(n, p.default)
+        for p in info.parameters
+    ]
     pars = np.column_stack(pars)
 
     egrid = np.arange(0.1, 10, 0.01)
     y1 = np.array([mfunc(energies=egrid, pars=p) for p in pars])
     y2 = jax.vmap(p, in_axes=(0, None, None), out_axes=0)(pars, egrid, 1)
-    y3 = jax.jit(jax.vmap(p, in_axes=(1, None, None), out_axes=0))(pars.T, egrid, 1)
+    y3 = jax.jit(jax.vmap(p, in_axes=(1, None, None), out_axes=0))(
+        pars.T, egrid, 1
+    )
 
     assert np.allclose(y1, y2)
     assert np.allclose(y1, y3)
 
 
-@pytest.mark.parametrize("model", MODELS_CON)
+@pytest.mark.parametrize('model', MODELS_CON)
 def test_batching_con(model):
     """Evaluate a convolution additive model."""
     p, info = x.get_primitive(model)
     if not info.can_cache:
-        pytest.skip(f"Model {model} can not be cached.")
+        pytest.skip(f'Model {model} can not be cached.')
 
     if model in MODELS_CON_SKIP:
-        pytest.skip(f"Model {model} is marked as un-testable.")
+        pytest.skip(f'Model {model} is marked as un-testable.')
 
     egrid = np.arange(0.1, 10, 0.01)
 
@@ -206,11 +214,19 @@ def test_batching_con(model):
     n = 5
     pars = np.column_stack([np.full(n, conv(p)) for p in info.parameters])
     y1 = np.array([mfunc(energies=egrid, pars=p, model=mvals) for p in pars])
-    y2 = jax.vmap(p, in_axes=(0, None, None, None), out_axes=0)(pars, egrid, mvals, 1)
-    y3 = jax.jit(jax.vmap(p, in_axes=(0, None, None, None), out_axes=0))(pars, egrid, mvals, 1)
+    y2 = jax.vmap(p, in_axes=(0, None, None, None), out_axes=0)(
+        pars, egrid, mvals, 1
+    )
+    y3 = jax.jit(jax.vmap(p, in_axes=(0, None, None, None), out_axes=0))(
+        pars, egrid, mvals, 1
+    )
     mvals_n = np.tile(mvals, (n, 1))
-    y4 = jax.vmap(p, in_axes=(None, None, 0, None), out_axes=0)(pars[0], egrid, mvals_n, 1)
-    y5 = jax.vmap(p, in_axes=(0, None, 0, None), out_axes=0)(pars, egrid, mvals_n, 1)
+    y4 = jax.vmap(p, in_axes=(None, None, 0, None), out_axes=0)(
+        pars[0], egrid, mvals_n, 1
+    )
+    y5 = jax.vmap(p, in_axes=(0, None, 0, None), out_axes=0)(
+        pars, egrid, mvals_n, 1
+    )
 
     assert (y1 > 0).any()
     assert np.any(y1 != ymodel)

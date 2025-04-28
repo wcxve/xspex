@@ -1,5 +1,10 @@
 # xspex
 
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/xspex?color=blue&logo=Python&logoColor=white&style=for-the-badge)](https://pypi.org/project/xspex)
+[![PyPI - Version](https://img.shields.io/pypi/v/xspex?color=blue&logo=PyPI&logoColor=white&style=for-the-badge)](https://pypi.org/project/xspex)
+[![License: GPL v3](https://img.shields.io/github/license/wcxve/xspex?color=blue&logo=open-source-initiative&logoColor=white&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)<br>
+[![Coverage Status](https://img.shields.io/codecov/c/github/wcxve/xspex?logo=Codecov&logoColor=white&style=for-the-badge)](https://app.codecov.io/github/wcxve/xspex)
+
 Access Xspec models and corresponding JAX/XLA ops, based on [xspec_models_cxc](https://github.com/cxcsds/xspec-models-cxc/) and [extending-jax](https://github.com/dfm/extending-jax).
 
 ## Installation
@@ -22,7 +27,7 @@ import xspex
 # For accuracy, it is recommended to enable double precision
 jax.config.update('jax_enable_x64', True)
 
-# Get APEC model primitive, whose JVP rule is defined by finite difference 
+# Get APEC model primitive, whose JVP rule is defined by finite difference
 apec, info = xspex.get_primitive('apec')
 
 # Evaluate the model via JAX primitive

@@ -1,8 +1,78 @@
+[project]
+name = "xspex"
+description = "Access Xspec models and corresponding JAX/XLA ops."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "GPL-3.0-or-later"
+authors = [
+    {name = "Wang-Chen Xue", email = "wcxuemail@gmail.com"},
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "numpy",
+    "jax>=0.4.16,<0.6.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = ["coverage[toml]", "pytest", "pytest-cov"]
+
+[project.urls]
+Documentation = "https://github.com/wcxve/xspex#readme"
+Issues = "https://github.com/wcxve/xspex/issues"
+Source = "https://github.com/wcxve/xspex"
+
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=64.0.0",
     "wheel",
     "pybind11>=2.10.0",
     "parse-xspec==0.1.0",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+format.quote-style = "single"
+lint.extend-select = ["Q"]
+lint.flake8-quotes.inline-quotes = "single"
+lint.ignore = [
+    "B028",  # allow warnings without stacklevel
+    "C901",  # allow functions with a high complexity
+    "E731",  # allow lambda functions
+]
+lint.isort.known-first-party = ["src"]
+lint.isort.combine-as-imports = true
+lint.select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP",  # pyupgrade
+]
+
+[tool.pytest]
+ini_options.addopts = "--cov=xspex --cov-report xml"
+
+[tool.coverage]
+run.branch = true
+run.parallel = true
+run.source = ["src/"]
+paths.source = ["src/", "*/site-packages"]
+report.exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+report.show_missing = true

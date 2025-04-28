@@ -8,7 +8,8 @@ from math import prod
 
 import jax
 import jax.numpy as jnp
-from jax.core import Primitive, ShapedArray
+from jax.core import ShapedArray
+from jax.extend.core import Primitive
 from jax.interpreters import ad, batching, mlir, xla
 from jax.lib import xla_client
 from jaxlib.hlo_helpers import custom_call
@@ -104,7 +105,7 @@ class XspecPrimitive(XspecPrimitiveBase):
             result_types=[out_type],
             operands=[params, egrid, spec_num, out_n, out_batch],
             operand_layouts=avals_to_layouts(ctx.avals_in) + [()] * 2,
-            result_layouts=avals_to_layouts(ctx.avals_out)
+            result_layouts=avals_to_layouts(ctx.avals_out),
         ).results
 
     def batching(self, vector_arg_values, batch_axes):
@@ -126,9 +127,7 @@ class XspecPrimitive(XspecPrimitiveBase):
         eps = jnp.finfo(params.dtype).eps
         identity = jnp.eye(len(params))
         params_abs = jnp.where(
-            jnp.equal(params, 0.0),
-            jnp.ones_like(params),
-            jnp.abs(params)
+            jnp.equal(params, 0.0), jnp.ones_like(params), jnp.abs(params)
         )
         params_abs = jnp.expand_dims(params_abs, axis=-1)
 
@@ -211,10 +210,16 @@ class XspecConvPrimitive(XspecPrimitiveBase):
             call_target_name,
             result_types=[out_type],
             operands=[
-                params, egrid, flux, spec_num, out_n, params_batch, flux_batch
+                params,
+                egrid,
+                flux,
+                spec_num,
+                out_n,
+                params_batch,
+                flux_batch,
             ],
             operand_layouts=avals_to_layouts(ctx.avals_in) + [()] * 3,
-            result_layouts=avals_to_layouts(ctx.avals_out)
+            result_layouts=avals_to_layouts(ctx.avals_out),
         ).results
 
     def batching(self, vector_arg_values, batch_axes):
@@ -232,7 +237,7 @@ class XspecConvPrimitive(XspecPrimitiveBase):
 
 
 def get_primitive(
-    model: str
+    model: str,
 ) -> tuple[XspecPrimitive | XspecConvPrimitive, xspex.XspecModel]:
     """Return the primitive for the given Xspec model.
 
@@ -260,7 +265,7 @@ def get_primitive(
     check = model.casefold()
     p = next(
         (v for k, v in XSModel['primitive'].items() if k.casefold() == check),
-        None
+        None,
     )
     if p is None:
         raise ValueError(f"Unrecognized Xspec model '{model}'")

@@ -1,0 +1,108 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+    paths-ignore:
+      - "docs/**"
+      - "README.md"
+  pull_request:
+
+env:
+  XSPECCHAN: "https://heasarc.gsfc.nasa.gov/FTP/software/conda/"
+  XSPECVER: "12.15.0"
+
+jobs:
+  tests:
+    defaults:
+      run:
+        # See https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
+        # to ensure we pass the "-el {0}" option
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: test
+          channels: conda-forge,defaults
+          channel-priority: true
+          mamba-version: "*"
+          python-version: ${{ matrix.python-version }}
+      - name: Conda Setup
+        run: |
+          mamba create -y -n test -c $XSPECCHAN -c conda-forge python=${{ matrix.python-version }} xspec xspec-data
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install .[test]
+      - name: Run tests
+        run: |
+          python -m pytest
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  build:
+    defaults:
+      run:
+        # See https://github.com/marketplace/actions/setup-miniconda#use-a-default-shell
+        # to ensure we pass the "-el {0}" option
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: build
+          channels: conda-forge,defaults
+          channel-priority: true
+          mamba-version: "*"
+          python-version: "3.11"
+      - name: Conda Setup
+        run: |
+          mamba create -y -n build -c $XSPECCHAN -c conda-forge python=3.11 xspec
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -U build twine
+      - name: Build the distribution
+        run: python -m build --sdist .
+      - name: Check the distribution
+        run: python -m twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          path: dist/*
+
+  publish:
+    environment:
+      name: PyPI
+      url: https://pypi.org/p/xspex
+    permissions:
+      id-token: write
+    needs: [tests, build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@v1.12.4

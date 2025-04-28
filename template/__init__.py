@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum, auto
-import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from .primitive import XspecPrimitive, XspecConvPrimitive
+    from .primitive import (
+        XspecConvPrimitive as XspecConvPrimitive,
+        XspecPrimitive as XspecPrimitive,
+    )
 
 try:
-    from ._compiled import *
+    from . import _compiled
+    from ._compiled import *  # noqa
+
+    _compiled._init()
     __version__ = _compiled.__version__
     __INITIALIZED__ = True
 except ImportError as ie:
@@ -20,13 +26,11 @@ except ImportError as ie:
     #
     #   import logging; logging.basicConfig(level=logging.DEBUG)
     #
-    logging.getLogger(__name__).warn("Unable to import compiled Xspec models")
+    logging.getLogger(__name__).warn('Unable to import compiled Xspec models')
     logging.getLogger(__name__).info(str(ie))
 
-    __version__ = "none"
+    __version__ = 'none'
     __INITIALIZED__ = False
-
-_compiled._init()
 
 
 class ModelType(Enum):
@@ -64,7 +68,6 @@ class XspecParameter:
     default: float
     units: str | None = None
     frozen: bool = False
-    # Would it be better to just have limits = [hardmin, softmni, softmax, hardmax]?
     softmin: float | None = None
     softmax: float | None = None
     hardmin: float | None = None
@@ -88,7 +91,7 @@ class XspecModel:
 
 
 _info = {
-##PYINFO##
+    ##PYINFO##
 }
 
 
@@ -137,8 +140,9 @@ def info(model: str) -> XspecModel:
 
 
 # Do we need Optional here?
-def list_models(modeltype: ModelType | None = None,
-                language: LanguageStyle | None = None) -> list[str]:
+def list_models(
+    modeltype: ModelType | None = None, language: LanguageStyle | None = None
+) -> list[str]:
     """Returns the names of Xspec models from the model.dat file.
 
     This returns the information on the model as taken from the Xspec
@@ -188,7 +192,6 @@ def list_models(modeltype: ModelType | None = None,
 
     out = set()
     for k, v in _info.items():
-
         if modeltype is not None and v.modeltype != modeltype:
             continue
 
@@ -201,4 +204,4 @@ def list_models(modeltype: ModelType | None = None,
 
 
 if __INITIALIZED__:
-    from .primitive import get_primitive
+    from .primitive import get_primitive as get_primitive
