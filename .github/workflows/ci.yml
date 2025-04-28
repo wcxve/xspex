@@ -1,0 +1,234 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+    paths-ignore:
+      - "docs/**"
+      - "README.md"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HEASARC_CHANNEL: "https://heasarc.gsfc.nasa.gov/FTP/software/conda"
+
+jobs:
+  download:
+    name: Download Xspec
+    defaults:
+      run:
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_info.outputs.version }}
+      build: ${{ steps.get_info.outputs.build }}
+      fn: ${{ steps.get_info.outputs.fn }}
+      url: ${{ steps.get_info.outputs.url }}
+      data-fn: ${{ steps.get_info.outputs.data-fn }}
+      data-url: ${{ steps.get_info.outputs.data-url }}
+    steps:
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+
+      - name: Install Utils
+        run: |
+          sudo apt-get install -y aria2 jq
+
+      - name: Get Latest Version of Xspec
+        id: get_info
+        run: |
+          get_latest_pkg() {
+            jq '
+              .result.pkgs
+              | sort_by(
+                  (
+                    .version | split(".") | map(tonumber) + [0, 0]
+                  )[0:3]
+                  + [.build_number]
+                )
+              | .[-1]
+            '
+          }
+
+          xspec=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
+          url=$(echo $xspec | jq -r '.url')
+          fn=$(echo $xspec | jq -r '.fn')
+          version=$(echo $xspec | jq -r '.version')
+          build=$(echo $xspec | jq -r '.build_string')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "fn=$fn" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+          xspec_data=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
+          data_url=$(echo $xspec_data | jq -r '.url')
+          data_fn=$(echo $xspec_data | jq -r '.fn')
+          echo "data-url=$data_url" >> "$GITHUB_OUTPUT"
+          echo "data-fn=$data_fn" >> "$GITHUB_OUTPUT"
+
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "BUILD=$build" >> "$GITHUB_ENV"
+          echo "FN=$fn" >> "$GITHUB_ENV"
+          echo "URL=$url" >> "$GITHUB_ENV"
+          echo "DATA_FN=$data_fn" >> "$GITHUB_ENV"
+          echo "DATA_URL=$data_url" >> "$GITHUB_ENV"
+
+      - name: Download Xspec $VERSION (Build $BUILD)
+        run: |
+          aria2c -x 16 -s 16 --show-console-readout=true "$URL"
+          if [ ! -f "$FN" ]; then
+            echo "Failed to download from $URL"
+            exit 1  # Exit with a non-zero status to fail the job
+          fi
+
+          aria2c -x 16 -s 16 --show-console-readout=true "$DATA_URL"
+          if [ ! -f "$DATA_FN" ]; then
+            echo "Failed to download from $DATA_URL"
+            exit 1  # Exit with a non-zero status to fail the job
+          fi
+
+      - name: Upload Xspec Package as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: $FN
+          path: $FN
+          retention-days: 1
+
+      - name: Upload Xspec Model Data Package as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: $DATA_FN
+          path: $DATA_FN
+          retention-days: 1
+
+  tests:
+    name: Tests (Python $PYTHON_VERSION, Xspec $XSPEC_VERSION)
+    needs: download
+    defaults:
+      run:
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      XSPEC_VERSION: ${{ needs.download.outputs.version }}
+      XSPEC_BUILD: ${{ needs.download.outputs.build }}
+      XSPEC_FN: ${{ needs.download.outputs.fn }}
+      XSPEC_URL: ${{ needs.download.outputs.url }}
+      XSPEC_DATA_FN: ${{ needs.download.outputs.data-fn }}
+      XSPEC_DATA_URL: ${{ needs.download.outputs.data-url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Xspec Package
+        uses: actions/download-artifact@v4
+
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: test
+          miniforge-version: latest
+          python-version: $PYTHON_VERSION
+
+      - name: Setup Conda Env
+        run: |
+          mamba create -y -n test python=$PYTHON_VERSION
+
+      - name: Install Xspec
+        run: |
+          mamba install $XSPEC_FN $XSPEC_DATA_FN \
+            -c $HEASARC_CHANNEL -c conda-forge --use-local
+
+      - name: Install Python Dependencies
+        run: |
+          pip install ".[test]" --verbose
+
+      - name: Run Tests
+        run: |
+          pytest
+
+      - name: Upload Coverage Results
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  build:
+    name: Build Source Distribution
+    needs: download
+    defaults:
+      run:
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    env:
+      XSPEC_FN: ${{ needs.download.outputs.fn }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Xspec Package
+        uses: actions/download-artifact@v4
+        with:
+          name: $XSPEC_FN
+
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: build
+          miniforge-version: latest
+          python-version: 3.11
+
+      - name: Setup Conda Env
+        run: |
+          mamba create -y -n build python=3.11
+
+      - name: Install Xspec
+        run: |
+          mamba install $XSPEC_FN \
+            -c $HEASARC_CHANNEL -c conda-forge --use-local
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -U build twine
+
+      - name: Build and Check Source Distribution
+        run: |
+          python -m build --sdist .
+          python -m twine check --strict dist/*
+
+      - name: Upload Source Distribution as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: dist/*
+
+  publish:
+    name: Publish to PyPI
+    needs: [tests, build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: PyPI
+      url: https://pypi.org/p/xspex
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Source Distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.4
