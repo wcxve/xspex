@@ -86,23 +86,23 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Tests (Linux-x86_64, Python 3.9)
+          - name: Tests (Python 3.9, Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.9"
 
-          - name: Tests (Linux-x86_64, Python 3.10)
+          - name: Tests (Python 3.10, Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.10"
 
-          - name: Tests (Linux-x86_64, Python 3.11)
+          - name: Tests (Python 3.11, Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.11"
 
-          - name: Tests (Linux-x86_64, Python 3.12)
+          - name: Tests (Python 3.12, Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.12"
 
-          - name: Tests (macOS-arm64, Python 3.12)
+          - name: Tests (Python 3.12, macOS-arm64)
             os: "macos-latest"
             python-version: "3.12"
     defaults:

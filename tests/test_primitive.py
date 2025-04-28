@@ -17,7 +17,11 @@ x.cosmology(H0=70, lambda0=0.73, q0=0)
 #
 x.abundance('lodd')
 x.cross_section('vern')
-x.set_model_string('NEIVERS', '3.1.2')
+version = x.version().split('.')
+major = int(version[0])
+minor = int(version[1])
+if major > 12 or (major == 12 and minor >= 15):
+    x.set_model_string('NEIVERS', '3.1.2')
 
 
 def test_powerlaw_primitive():
