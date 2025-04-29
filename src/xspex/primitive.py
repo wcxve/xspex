@@ -20,6 +20,8 @@ except ImportError:
 # register_custom_call_target is replaced by register_ffi_target in jax>=0.6.0
 try:
     from jax.ffi import register_ffi_target
+
+    register_ffi_target = partial(register_ffi_target, api_version=0)
 except ImportError:
     from jax.lib import xla_client
 
@@ -285,7 +287,7 @@ def get_primitive(
 
 
 for k, v in xspex.xla_registrations().items():
-    register_ffi_target(k, v, platform='cpu', api_version=0)
+    register_ffi_target(k, v, platform='cpu')
 
 add = xspex.list_models(xspex.ModelType.Add)
 mul = xspex.list_models(xspex.ModelType.Mul)
