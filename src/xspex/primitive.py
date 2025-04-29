@@ -9,10 +9,21 @@ from math import prod
 import jax
 import jax.numpy as jnp
 from jax.core import ShapedArray
-from jax.extend.core import Primitive
 from jax.interpreters import ad, batching, mlir, xla
-from jax.lib import xla_client
-from jaxlib.hlo_helpers import custom_call
+
+# Primitive is moved from jax.core to jax.extend.core in jax>=0.6.0
+try:
+    from jax.extend.core import Primitive
+except ImportError:
+    from jax.core import Primitive
+
+# register_custom_call_target is replaced by register_ffi_target in jax>=0.6.0
+try:
+    from jax.ffi import register_ffi_target
+except ImportError:
+    from jax.lib import xla_client
+
+    register_ffi_target = xla_client.register_custom_call_target
 
 import xspex
 
@@ -100,7 +111,7 @@ class XspecPrimitive(XspecPrimitiveBase):
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
         out_batch = mlir.ir_constant(prod(out_shape[:-1]))
-        return custom_call(
+        return mlir.custom_call(
             call_target_name,
             result_types=[out_type],
             operands=[params, egrid, spec_num, out_n, out_batch],
@@ -206,7 +217,7 @@ class XspecConvPrimitive(XspecPrimitiveBase):
         out_type = mlir.ir.RankedTensorType.get(out_shape, etype)
         out_n = mlir.ir_constant(out_shape[-1])
 
-        return custom_call(
+        return mlir.custom_call(
             call_target_name,
             result_types=[out_type],
             operands=[
@@ -274,7 +285,7 @@ def get_primitive(
 
 
 for k, v in xspex.xla_registrations().items():
-    xla_client.register_custom_call_target(k, v, platform='cpu')
+    register_ffi_target(k, v, platform='cpu', api_version=0)
 
 add = xspex.list_models(xspex.ModelType.Add)
 mul = xspex.list_models(xspex.ModelType.Mul)
