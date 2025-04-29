@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Tests (Python 3.12 in Linux-64)
+          - name: Tests (Python 3.12 in Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.12"
             extra-deps: "test"
