@@ -18,12 +18,14 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "jax>=0.4.16,<0.6.0",
+    "jax>=0.4.16",
+    "jaxlib>=0.4.16",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["coverage[toml]", "pytest", "pytest-cov"]
+test = ["coverage[toml]", "pytest", "pytest-cov", "pytest-xdist"]
+mindep = ["jax==0.4.16", "jaxlib==0.4.16", "numpy<2"]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
@@ -63,7 +65,7 @@ lint.select = [
 ]
 
 [tool.pytest]
-ini_options.addopts = "--cov=xspex --cov-report xml"
+ini_options.addopts = "-n auto --cov=xspex --cov-report xml"
 
 [tool.coverage]
 run.branch = true

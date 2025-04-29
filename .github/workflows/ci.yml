@@ -86,25 +86,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Tests (Python 3.9, Linux-x86_64)
-            os: "ubuntu-latest"
-            python-version: "3.9"
-
-          - name: Tests (Python 3.10, Linux-x86_64)
-            os: "ubuntu-latest"
-            python-version: "3.10"
-
-          - name: Tests (Python 3.11, Linux-x86_64)
-            os: "ubuntu-latest"
-            python-version: "3.11"
-
-          - name: Tests (Python 3.12, Linux-x86_64)
+          - name: Tests (Python 3.12 in Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.12"
+            extra-deps: "test"
 
-          - name: Tests (Python 3.12, macOS-arm64)
+          - name: Tests (Python 3.12 in macOS-arm64)
             os: "macos-latest"
             python-version: "3.12"
+            extra-deps: "test"
+
+          - name: Tests (Minimum Version Deps)
+            os: "ubuntu-latest"
+            python-version: "3.9"
+            extra-deps: "test,mindep"
     defaults:
       run:
         shell: bash -el {0}
@@ -130,7 +125,7 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install ".[test]" --verbose
+          pip install ".[${{ matrix.extra-deps }}]" --verbose
 
       - name: Run Tests
         run: |
@@ -157,7 +152,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install Xspec
         run: |
