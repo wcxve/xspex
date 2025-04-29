@@ -25,7 +25,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 test = ["coverage[toml]", "pytest", "pytest-cov", "pytest-xdist"]
-mindep = ["jax==0.4.16", "jaxlib==0.4.16", "numpy<2"]
+mindep = ["jax==0.4.30", "jaxlib==0.4.16", "numpy<2"]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
