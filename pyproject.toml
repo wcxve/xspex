@@ -19,12 +19,13 @@ classifiers = [
 dependencies = [
     "numpy",
     "jax>=0.4.16",
+    "jaxlib>=0.4.16",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = ["coverage[toml]", "pytest", "pytest-cov"]
-mindep = ["jax==0.4.16"]
+mindep = ["jax==0.4.16", "jaxlib==0.4.16"]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
