@@ -118,7 +118,7 @@ if not include_dir.is_dir():
     sys.stderr.write(f'ERROR: unable to find {include_dir}/')
     sys.exit(1)
 
-macros = [('VERSION_INFO', __version__)] + xspec_macros
+macros = [('XSPEX_VERSION', __version__)] + xspec_macros
 
 
 ext_modules = [

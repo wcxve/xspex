@@ -1,6 +1,7 @@
 #include "xspex.hpp"
 
-#define STRINGIFY(x) #x
+#define STRINGIFY_HELPER(x) #x
+#define STRINGIFY(x) STRINGIFY_HELPER(x)
 
 using namespace pybind11::literals;
 
