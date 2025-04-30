@@ -366,7 +366,7 @@ def apply_python(models, template, xspec_version, outfile):
     with template.open(mode='rt') as ifh:
         out = ifh.read()
 
-        out = replace_term(out, '##PYINFO##', ',\n'.join(mstrs))
+        out = replace_term(out, '    ##PYINFO##', ',\n'.join(mstrs))
         # out = replace_term(out, '@@XspecVER@@', xspec_version)
 
     with outfile.open(mode='wt') as ofh:
@@ -413,6 +413,18 @@ def apply(modelfile, xspec_version, out_dir):
             f'ERROR: unable to parse model.fat file: {modelfile}\n'
         )
         sys.exit(1)
+
+    # Set model names to lower case and standardize the names a bit.
+    def set_name(m):
+        name = m.name.lower()
+        if name == 'sss_ice':
+            name = 'sssice'
+        elif name.endswith('gaussian'):
+            name = name.replace('gaussian', 'gauss')
+        m.name = name
+        return m
+
+    allmodels = list(map(set_name, allmodels))
 
     # Filter to the ones we care about
     models = [m for m in allmodels if m.modeltype in ['Add', 'Mul', 'Con']]
