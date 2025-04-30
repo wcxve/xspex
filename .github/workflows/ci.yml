@@ -128,8 +128,11 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          uv pip install . --resolution ${{ matrix.uv-resolution }} --verbose
-          uv pip install ".[test]" --verbose
+          uv pip compile pyproject.toml \
+            --output-file requirements.txt \
+            --resolution ${{ matrix.uv-resolution }} \
+            --verbose
+          uv pip install ".[test]" --overrides requirements.txt --verbose
 
       - name: Run Tests
         run: |
