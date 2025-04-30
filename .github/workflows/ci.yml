@@ -89,17 +89,17 @@ jobs:
           - name: Tests (Python 3.12 in Linux-x86_64)
             os: "ubuntu-latest"
             python-version: "3.12"
-            extra-deps: "test"
+            uv-resolution: "highest"
 
           - name: Tests (Python 3.12 in macOS-arm64)
             os: "macos-latest"
             python-version: "3.12"
-            extra-deps: "test"
+            uv-resolution: "highest"
 
-          - name: Tests (Minimum Version Deps)
+          - name: Tests (Lowest Version Deps)
             os: "ubuntu-latest"
             python-version: "3.9"
-            extra-deps: "test,mindep"
+            uv-resolution: "lowest-direct"
     defaults:
       run:
         shell: bash -el {0}
@@ -123,9 +123,15 @@ jobs:
           mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
           conda install --use-local ${{ needs.download.outputs.data-fn }} -y
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Install Python Dependencies
         run: |
-          pip install ".[${{ matrix.extra-deps }}]" --verbose
+          uv pip compile pyproject.toml \
+            --output-file requirements.txt \
+            --resolution ${{ matrix.uv-resolution }}
+          uv pip install ".[test]" --overrides requirements.txt --verbose
 
       - name: Run Tests
         run: |
