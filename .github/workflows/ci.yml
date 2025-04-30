@@ -128,7 +128,8 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          uv pip install ".[test]" --resolution ${{ matrix.uv-resolution }} --verbose
+          uv pip install . --resolution ${{ matrix.uv-resolution }} --verbose
+          uv pip install ".[test]" --verbose
 
       - name: Run Tests
         run: |
