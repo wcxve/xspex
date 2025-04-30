@@ -131,7 +131,6 @@ jobs:
           uv pip compile pyproject.toml \
             --output-file requirements.txt \
             --resolution ${{ matrix.uv-resolution }} \
-            --verbose
           uv pip install ".[test]" --overrides requirements.txt --verbose
 
       - name: Run Tests
