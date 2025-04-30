@@ -171,22 +171,22 @@ def list_models(
 
     Examples
     --------
+    With Xspec 12.15.0:
 
     >>> len(list_models())
-    231
+    310
 
     >>> 'tbabs' in list_models()
-    False
-    >>> 'TBabs' in list_models()
     True
 
-    With Xspec 12.13.1 / HEASOFT 6.29:
+    >>> 'TBabs' in list_models()
+    False
 
     >>> list_models(modeltype=ModelType.Con)
     ['cflux', 'clumin', 'cpflux', 'gsmooth', ..., 'zashift', 'zmshift']
 
     >>> list_models(modeltype=ModelType.Con, language=LanguageStyle.F77Style4)
-    ['kyconv', 'rgsxsrc', 'thcomp']
+    ['kyconv', 'thcomp']
 
     """
 
