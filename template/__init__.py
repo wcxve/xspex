@@ -18,6 +18,8 @@ try:
     from ._compiled import *  # noqa
 
     _compiled._init()
+    # initialize cosmology here, as it is not done in FNINIT
+    _compiled.cosmology(H0=70, lambda0=0.73, q0=0)
     __version__ = _compiled.__version__
     __INITIALIZED__ = True
 except ImportError as ie:
