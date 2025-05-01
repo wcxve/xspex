@@ -3,22 +3,6 @@ import pytest
 
 import xspex as x
 
-# We need to set up the cosmology as this is currently not done in FNINIT.
-#
-x.cosmology(H0=70, lambda0=0.73, q0=0)
-
-# We want to ensure we have a fixed abundance / cross section
-# for the checks below. If we didn't set them here then it
-# would depend on the user's ~/.xspec/Xspec.init file
-#
-x.abundance('lodd')
-x.cross_section('vern')
-version = x.version().split('.')
-major = int(version[0])
-minor = int(version[1])
-if major > 12 or (major == 12 and minor >= 15):
-    x.set_model_string('NEIVERS', '3.1.2')
-
 
 def get_dtype(model):
     """What is the drtype used by this model?"""
