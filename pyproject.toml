@@ -2,7 +2,7 @@
 name = "xspex"
 description = "Access Xspec models and corresponding JAX/XLA ops."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<=3.13"
 license = "GPL-3.0-or-later"
 authors = [
     {name = "Wang-Chen Xue", email = "wcxuemail@gmail.com"},
@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "numpy>=1.23.3",
