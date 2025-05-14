@@ -25,7 +25,12 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["coverage[toml]", "pytest", "pytest-cov", "pytest-xdist"]
+test = [
+    "coverage[toml]>=7.8.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
