@@ -106,6 +106,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download Xspec Model Data
         uses: actions/download-artifact@v4
