@@ -25,7 +25,12 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["coverage[toml]", "pytest", "pytest-cov", "pytest-xdist"]
+test = [
+    "coverage[toml]>=7.8.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
@@ -65,11 +70,11 @@ lint.select = [
 ]
 
 [tool.pytest]
-ini_options.addopts = "-n auto --cov --cov-report xml"
+ini_options.addopts = "-n auto --cov --cov-report=xml --junitxml=junit.xml"
+ini_options.testpaths = ["tests"]
 
 [tool.coverage]
-run.relative_files = true
-run.source = ["src"]
+run.source_dirs = ["src/xspex"]
 report.exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
