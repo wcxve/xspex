@@ -69,7 +69,7 @@ ini_options.addopts = "-n auto --cov --cov-report xml"
 ini_options.testpaths = ["tests"]
 
 [tool.coverage]
-run.source_dirs = ["src"]
+run.source_dirs = ["src/xspex"]
 report.exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
