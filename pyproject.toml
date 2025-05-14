@@ -65,9 +65,11 @@ lint.select = [
 ]
 
 [tool.pytest]
-ini_options.addopts = "-n auto --cov=xspex --cov-report xml"
+ini_options.addopts = "-n auto --cov --cov-report xml"
 
 [tool.coverage]
+run.relative_files = true
+run.source = ["src"]
 report.exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
@@ -83,3 +85,4 @@ report.exclude_also = [
     # Don't complain about abstract methods' implementations
     '@(abc\.)?abstractmethod',
 ]
+report.show_missing = true
