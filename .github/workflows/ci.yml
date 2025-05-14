@@ -141,7 +141,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
-          files: ./junit.xml,!./cache
+          file: junit.xml
           flags: "py${{ matrix.python-version }}"
           name: "Python ${{ matrix.python-version }}"
           token: ${{ secrets.CODECOV_TOKEN }}
