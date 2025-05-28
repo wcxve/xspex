@@ -92,7 +92,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/${{ env.XSPEC_FN }}"
-          key: "${{ runner.os }}-${{ env.XSPEC_FN }}"
+          key: "${{ runner.os }}-${{ env.XSPEC_VERSION }}-${{ env.XSPEC_BUILD }}"
           lookup-only: true
 
       - name: Cache Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
@@ -101,7 +101,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}"
-          key: "${{ env.DATA_FN }}"
+          key: "${{ env.DATA_VERSION }}-${{ env.DATA_BUILD }}"
           lookup-only: true
 
       - name: Cache Xspec
