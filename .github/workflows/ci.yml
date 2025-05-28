@@ -19,7 +19,7 @@ env:
   HEASARC_CHANNEL: "https://heasarc.gsfc.nasa.gov/FTP/software/conda"
 
 jobs:
-  download:
+  cache:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -65,31 +65,30 @@ jobs:
             '
           }
 
-          pkg_dir=$(mamba info --json | jq '.["package cache"][0]')
+          pkg_dir=$(conda info --json | jq -r '.pkgs_dirs[0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
-          echo $pkg_dir
 
           xspec_pkg=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
-          xspec_version=$(echo xspec_pkg | jq -r '.version')
-          xspec_build=$(echo xspec_pkg | jq -r '.build_string')
-          xspec_url=$(echo xspec_pkg | jq -r '.url')
-          xspec_fn=$(echo xspec_pkg | jq -r '.fn')
-          echo "XSPEC_VERSION=xspec_version" >> "$GITHUB_ENV"
-          echo "XSPEC_BUILD=xspec_build" >> "$GITHUB_ENV"
+          xspec_version=$(echo $xspec_pkg | jq -r '.version')
+          xspec_build=$(echo $xspec_pkg | jq -r '.build_string')
+          xspec_url=$(echo $xspec_pkg | jq -r '.url')
+          xspec_fn=$(echo $xspec_pkg | jq -r '.fn')
+          echo "XSPEC_VERSION=$xspec_version" >> "$GITHUB_ENV"
+          echo "XSPEC_BUILD=$xspec_build" >> "$GITHUB_ENV"
           echo "XSPEC_URL=$xspec_url" >> "$GITHUB_ENV"
           echo "XSPEC_FN=$xspec_fn" >> "$GITHUB_ENV"
           echo "xspec-fn=$xspec_fn" >> "$GITHUB_OUTPUT"
 
           data_pkg=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
-          data_version=$(echo data_pkg | jq -r '.version')
-          data_build=$(echo data_pkg | jq -r '.build_string')
-          data_url=$(echo data_pkg | jq -r '.url')
-          data_fn=$(echo data_pkg | jq -r '.fn')
-          echo "DATA_VERSION=data_version" >> "$GITHUB_ENV"
-          echo "DATA_BUILD=data_build" >> "$GITHUB_ENV"
-          echo "DATA_URL=data_url" >> "$GITHUB_ENV"
-          echo "DATA_FN=data_fn" >> "$GITHUB_ENV"
-          echo "data-fn=data_fn" >> "$GITHUB_OUTPUT"
+          data_version=$(echo $data_pkg | jq -r '.version')
+          data_build=$(echo $data_pkg | jq -r '.build_string')
+          data_url=$(echo $data_pkg | jq -r '.url')
+          data_fn=$(echo $data_pkg | jq -r '.fn')
+          echo "DATA_VERSION=$data_version" >> "$GITHUB_ENV"
+          echo "DATA_BUILD=$data_build" >> "$GITHUB_ENV"
+          echo "DATA_URL=$data_url" >> "$GITHUB_ENV"
+          echo "DATA_FN=$data_fn" >> "$GITHUB_ENV"
+          echo "data-fn=$data_fn" >> "$GITHUB_OUTPUT"
 
       - name: Cache Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
         id: cache-xspec
@@ -128,7 +127,7 @@ jobs:
   tests:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    needs: download
+    needs: cache
     strategy:
       matrix:
         include:
@@ -170,15 +169,15 @@ jobs:
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.download.outputs.xspec-fn }}"
-          key: "${{ runner.os}}-${{ needs.download.outputs.xspec-fn }}"
+          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.xspec-fn }}"
+          key: "${{ runner.os }}-${{ needs.cache.outputs.xspec-fn }}"
           fail-on-cache-miss: true
 
       - name: Cache Xspec Model Data
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.download.outputs.data-fn }}"
-          key: "${{ runner.os}}-${{ needs.download.outputs.data-fn }}"
+          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.data-fn }}"
+          key: "${{ runner.os }}-${{ needs.cache.outputs.data-fn }}"
           fail-on-cache-miss: true
 
       - name: Install Xspec
@@ -217,6 +216,7 @@ jobs:
   build:
     name: Build Source Distribution
     runs-on: ubuntu-latest
+    needs: cache
     defaults:
       run:
         shell: bash -el {0}
@@ -229,6 +229,22 @@ jobs:
         with:
           miniforge-version: latest
           python-version: "3.13"
+
+      - name: Get Conda Package Path
+        run: |
+          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
+
+      - name: Cache Xspec
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.xspec-fn }}"
+          key: "${{ runner.os }}-${{ needs.cache.outputs.xspec-fn }}"
+          fail-on-cache-miss: true
+
+      - name: Install Xspec
+        run: |
+          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Xspec
         run: |
