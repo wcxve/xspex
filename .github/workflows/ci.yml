@@ -20,10 +20,14 @@ env:
 
 jobs:
   download:
-    name: Cache Xspec Model Data
-    runs-on: ubuntu-latest
+    name: Cache Xspec Conda Package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest"]
     outputs:
-      data-fn: ${{ steps.get_info.outputs.fn }}
+      xspec-fn: ${{ steps.package-info.outputs.xspec-fn }}
+      data-fn: ${{ steps.package-info.outputs.data-fn }}
     defaults:
       run:
         shell: bash -el {0}
@@ -33,12 +37,8 @@ jobs:
         with:
           miniforge-version: latest
 
-      - name: Install Utils
-        run: |
-          sudo apt-get install -y aria2 jq
-
-      - name: Get Latest Version of Xspec Model Data
-        id: get_info
+      - name: Get Latest Version of Xspec Conda Package
+        id: package-info
         run: |
           get_latest_pkg() {
             jq '
@@ -60,31 +60,62 @@ jobs:
             '
           }
 
-          data_pkg=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
-          version=$(echo $data_pkg | jq -r '.version')
-          build=$(echo $data_pkg | jq -r '.build_string')
-          url=$(echo $data_pkg | jq -r '.url')
-          fn=$(echo $data_pkg | jq -r '.fn')
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "BUILD=$build" >> "$GITHUB_ENV"
-          echo "URL=$url" >> "$GITHUB_ENV"
-          echo "FN=$fn" >> "$GITHUB_ENV"
-          echo "fn=$fn" >> "$GITHUB_OUTPUT"
+          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
 
-      - name: Cache Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
+          xspec_pkg=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
+          xspec_version=$(echo xspec_pkg | jq -r '.version')
+          xspec_build=$(echo xspec_pkg | jq -r '.build_string')
+          xspec_url=$(echo xspec_pkg | jq -r '.url')
+          xspec_fn=$(echo xspec_pkg | jq -r '.fn')
+          echo "XSPEC_VERSION=xspec_version" >> "$GITHUB_ENV"
+          echo "XSPEC_BUILD=xspec_build" >> "$GITHUB_ENV"
+          echo "XSPEC_URL=$xspec_url" >> "$GITHUB_ENV"
+          echo "XSPEC_FN=$xspec_fn" >> "$GITHUB_ENV"
+          echo "xspec-fn=$xspec_fn" >> "$GITHUB_OUTPUT"
+
+          data_pkg=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
+          data_version=$(echo data_pkg | jq -r '.version')
+          data_build=$(echo data_pkg | jq -r '.build_string')
+          data_url=$(echo data_pkg | jq -r '.url')
+          data_fn=$(echo data_pkg | jq -r '.fn')
+          echo "DATA_VERSION=data_version" >> "$GITHUB_ENV"
+          echo "DATA_BUILD=data_build" >> "$GITHUB_ENV"
+          echo "DATA_URL=data_url" >> "$GITHUB_ENV"
+          echo "DATA_FN=data_fn" >> "$GITHUB_ENV"
+          echo "data-fn=data_fn" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
+        id: cache-xspec
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/${{ env.XSPEC_FN }}"
+          key: "${{ runner.os }}-${{ env.XSPEC_FN }}"
+          lookup-only: true
+
+      - name: Cache Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
         id: cache-xspec-model-data
         uses: actions/cache@v4
         with:
-          path: ${{ env.FN }}
-          key: ${{ env.FN }}
+          path: "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}"
+          key: "${{ env.DATA_FN }}"
           lookup-only: true
 
-      - name: Download Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
-        if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
+      - name: Download Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
+        if: steps.cache-xspec.outputs.cache-hit != 'true'
         run: |
-          aria2c -x 16 -s 16 --show-console-readout=true "$URL"
-          if [ ! -f "$FN" ]; then
-            echo "Failed to download from $URL"
+          aria2c -x 16 -s 16 --show-console-readout=true "$XSPEC_URL"
+          if [ ! -f "$XSPEC_FN" ]; then
+            echo "Failed to download from $XSPEC_URL"
+            exit 1  # Exit with a non-zero status to fail the job
+          fi
+
+      - name: Download Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
+        if: runner.os == 'Linux' && steps.cache-xspec-model-data.outputs.cache-hit != 'true'
+        run: |
+          aria2c -x 16 -s 16 --show-console-readout=true "$DATA_URL"
+          if [ ! -f "$DATA_FN" ]; then
+            echo "Failed to download from $DATA_URL"
             exit 1  # Exit with a non-zero status to fail the job
           fi
 
@@ -116,13 +147,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Xspec Model Data
-        uses: actions/cache@v4
-        with:
-          path: ${{ needs.download.outputs.data-fn }}
-          key: ${{ needs.download.outputs.data-fn }}
-          fail-on-cache-miss: true
-
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -132,10 +156,28 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Get Conda Package Path
+        run: |
+          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
+
+      - name: Cache Xspec
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.download.outputs.xspec-fn }}"
+          key: "${{ runner.os}}-${{ needs.download.outputs.xspec-fn }}"
+          fail-on-cache-miss: true
+
+      - name: Cache Xspec Model Data
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.download.outputs.data-fn }}"
+          key: "${{ runner.os}}-${{ needs.download.outputs.data-fn }}"
+          fail-on-cache-miss: true
+
       - name: Install Xspec
         run: |
-          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
-          conda install --use-local ${{ needs.download.outputs.data-fn }} -y
+          mamba install xspec xspec-data -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Python Dependencies
         run: |
