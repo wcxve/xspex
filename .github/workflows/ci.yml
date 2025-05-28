@@ -70,6 +70,7 @@ jobs:
         with:
           path: ${{ env.FN }}
           key: ${{ env.FN }}
+          lookup-only: true
 
       - name: Download Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
         if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
