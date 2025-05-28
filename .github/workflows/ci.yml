@@ -182,6 +182,7 @@ jobs:
 
       - name: Parse Package Info
         run: |
+          ls
           xspec=$(cat pkg-info-${{ runner.os }} | jq -r '.xspec')
           data=$(cat pkg-info-${{ runner.os }} | jq -r '.data')
           echo "XSPEC=$xspec" >> "$GITHUB_ENV"
