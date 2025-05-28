@@ -65,8 +65,7 @@ jobs:
             '
           }
 
-          mamba info --json
-          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          pkg_dir=$(mamba info --json | jq '.["package cache"][0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
 
           xspec_pkg=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
