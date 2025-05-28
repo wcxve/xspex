@@ -163,7 +163,7 @@ jobs:
 
       - name: Get Conda Package Path
         run: |
-          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          pkg_dir=$(conda info --json | jq -r '.pkgs_dirs[0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
 
       - name: Cache Xspec
@@ -232,7 +232,7 @@ jobs:
 
       - name: Get Conda Package Path
         run: |
-          pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
+          pkg_dir=$(conda info --json | jq -r '.pkgs_dirs[0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
 
       - name: Cache Xspec
@@ -241,10 +241,6 @@ jobs:
           path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.xspec-fn }}"
           key: "${{ runner.os }}-${{ needs.cache.outputs.xspec-fn }}"
           fail-on-cache-miss: true
-
-      - name: Install Xspec
-        run: |
-          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Xspec
         run: |
