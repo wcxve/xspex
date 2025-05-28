@@ -67,6 +67,7 @@ jobs:
 
           pkg_dir=$(mamba info --json | jq '.["package cache"][0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
+          echo $pkg_dir
 
           xspec_pkg=$(mamba search xspec -c $HEASARC_CHANNEL --json | get_latest_pkg)
           xspec_version=$(echo xspec_pkg | jq -r '.version')
