@@ -130,6 +130,7 @@ jobs:
               "data": "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}",
             }
           ' > pkg-info.json
+          cat pkg-info.json
 
       - name: Upload Package Info
         uses: actions/upload-artifact@v4
