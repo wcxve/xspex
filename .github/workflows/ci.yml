@@ -114,6 +114,7 @@ jobs:
             echo "Failed to download from $XSPEC_URL"
             exit 1  # Exit with a non-zero status to fail the job
           fi
+          mv "$XSPEC_FN" "$CONDA_PKG_DIR"
 
       - name: Download Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
         if: runner.os == 'Linux' && steps.cache-xspec-model-data.outputs.cache-hit != 'true'
@@ -123,6 +124,7 @@ jobs:
             echo "Failed to download from $DATA_URL"
             exit 1  # Exit with a non-zero status to fail the job
           fi
+          mv "$DATA_FN" "$CONDA_PKG_DIR"
 
   tests:
     name: ${{ matrix.name }}
