@@ -178,6 +178,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pkg-info-${{ runner.os }}
+          path: "./"
 
       - name: Parse Package Info
         run: |
@@ -254,6 +255,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pkg-info-${{ runner.os }}
+          path: "./"
 
       - name: Parse Package Info
         run: |
