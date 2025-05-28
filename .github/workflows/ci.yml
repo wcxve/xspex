@@ -74,7 +74,6 @@ jobs:
           echo "XSPEC_BUILD=$xspec_build" >> "$GITHUB_ENV"
           echo "XSPEC_URL=$xspec_url" >> "$GITHUB_ENV"
           echo "XSPEC_FN=$xspec_fn" >> "$GITHUB_ENV"
-          echo "xspec-fn=$xspec_fn" >> "$GITHUB_OUTPUT"
 
           data_pkg=$(mamba search xspec-data -c $HEASARC_CHANNEL --json | get_latest_pkg)
           data_version=$(echo $data_pkg | jq -r '.version')
@@ -85,14 +84,13 @@ jobs:
           echo "DATA_BUILD=$data_build" >> "$GITHUB_ENV"
           echo "DATA_URL=$data_url" >> "$GITHUB_ENV"
           echo "DATA_FN=$data_fn" >> "$GITHUB_ENV"
-          echo "data-fn=$data_fn" >> "$GITHUB_OUTPUT"
 
       - name: Cache Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
         id: cache-xspec
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/${{ env.XSPEC_FN }}"
-          key: "${{ runner.os }}-${{ env.XSPEC_VERSION }}-${{ env.XSPEC_BUILD }}"
+          key: "${{ env.CONDA_PKG_DIR }}/${{ env.XSPEC_FN }}"
           lookup-only: true
 
       - name: Cache Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
@@ -101,23 +99,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}"
-          key: "${{ env.DATA_VERSION }}-${{ env.DATA_BUILD }}"
-          lookup-only: true
-
-      - name: Cache Xspec
-        if: steps.cache-xspec.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-Xspec}"
-          lookup-only: true
-
-      - name: Cache Xspec Model Data
-        if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
-          key: "${{ runner.os }}-Xspec-Data}"
+          key: "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}"
           lookup-only: true
 
       - name: Download Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
@@ -139,6 +121,21 @@ jobs:
             exit 1  # Exit with a non-zero status to fail the job
           fi
           mv "$DATA_FN" "$CONDA_PKG_DIR"
+
+      - name: Save Package Info as Artifact
+        run: |
+          echo '
+            {
+              "xspec": "${{ env.CONDA_PKG_DIR }}/${{ env.XSPEC_FN }}",
+              "data": "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}",
+            }
+          ' > pkg-info.json
+
+      - name: Upload Package Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-info-${{ runner.os }}
+          path: pkg-info.json
 
   tests:
     name: ${{ matrix.name }}
@@ -177,23 +174,31 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Get Conda Package Path
+      - name: Download Package Info
+        uses: actions/download-artifact@v4
+        with:
+          name: pkg-info-${{ runner.os }}
+          path: pkg-info.json
+
+      - name: Parse Package Info
         run: |
-          pkg_dir=$(conda info --json | jq -r '.pkgs_dirs[0]')
-          echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
+          xspec=$(jq -r '.xspec' pkg-info.json)
+          data=$(jq -r '.data' pkg-info.json)
+          echo "XSPEC=$xspec" >> "$GITHUB_ENV"
+          echo "DATA=$data" >> "$GITHUB_ENV"
 
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-Xspec}"
+          path: ${{ env.XSPEC }}
+          key: ${{ env.XSPEC }}
           fail-on-cache-miss: true
 
       - name: Cache Xspec Model Data
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
-          key: "${{ runner.os }}-Xspec-Data}"
+          path: ${{ env.DATA }}
+          key: ${{ env.DATA }}
           fail-on-cache-miss: true
 
       - name: Install Xspec
@@ -246,16 +251,22 @@ jobs:
           miniforge-version: latest
           python-version: "3.13"
 
-      - name: Get Conda Package Path
+      - name: Download Package Info
+        uses: actions/download-artifact@v4
+        with:
+          name: pkg-info-${{ runner.os }}
+          path: pkg-info.json
+
+      - name: Parse Package Info
         run: |
-          pkg_dir=$(conda info --json | jq -r '.pkgs_dirs[0]')
-          echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
+          xspec=$(jq -r '.xspec' pkg-info.json)
+          echo "XSPEC=$xspec" >> "$GITHUB_ENV"
 
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-Xspec}"
+          path: ${{ env.XSPEC }}
+          key: ${{ env.XSPEC }}
           fail-on-cache-miss: true
 
       - name: Install Xspec
