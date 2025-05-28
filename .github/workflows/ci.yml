@@ -254,8 +254,8 @@ jobs:
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.xspec-fn }}"
-          key: "${{ runner.os }}-${{ needs.cache.outputs.xspec-fn }}"
+          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
+          key: "${{ runner.os }}-xspec}"
           fail-on-cache-miss: true
 
       - name: Install Xspec
