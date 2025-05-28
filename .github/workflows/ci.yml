@@ -178,13 +178,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pkg-info-${{ runner.os }}
-          path: "./"
 
       - name: Parse Package Info
         run: |
-          ls
-          xspec=$(cat pkg-info-${{ runner.os }} | jq -r '.xspec')
-          data=$(cat pkg-info-${{ runner.os }} | jq -r '.data')
+          xspec=$(cat pkg-info.json | jq -r '.xspec')
+          data=$(cat pkg-info.json | jq -r '.data')
           echo "XSPEC=$xspec" >> "$GITHUB_ENV"
           echo "DATA=$data" >> "$GITHUB_ENV"
 
@@ -256,11 +254,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pkg-info-${{ runner.os }}
-          path: "./"
 
       - name: Parse Package Info
         run: |
-          xspec=$(cat pkg-info-${{ runner.os }} | jq -r '.xspec')
+          xspec=$(cat pkg-info.json | jq -r '.xspec')
           echo "XSPEC=$xspec" >> "$GITHUB_ENV"
 
       - name: Cache Xspec
