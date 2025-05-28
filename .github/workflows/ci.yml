@@ -89,8 +89,8 @@ jobs:
         id: cache-xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.PKG_DIR }}/${{ env.XSPEC_FN }}"
           key: "${{ env.PKG_DIR }}/${{ env.XSPEC_FN }}"
+          path: "${{ env.PKG_DIR }}/${{ env.XSPEC_FN }}"
           lookup-only: true
 
       - name: Cache Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
@@ -98,8 +98,9 @@ jobs:
         if: runner.os == 'Linux'
         uses: actions/cache@v4
         with:
-          path: "${{ env.PKG_DIR }}/${{ env.DATA_FN }}"
           key: "${{ env.PKG_DIR }}/${{ env.DATA_FN }}"
+          path: "${{ env.PKG_DIR }}/${{ env.DATA_FN }}"
+          enableCrossOsArchive: true
           lookup-only: true
 
       - name: Download Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
@@ -184,15 +185,16 @@ jobs:
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: ${{ env.XSPEC }}
           key: ${{ env.XSPEC }}
+          path: ${{ env.XSPEC }}
           fail-on-cache-miss: true
 
       - name: Cache Xspec Model Data
         uses: actions/cache@v4
         with:
-          path: ${{ env.DATA }}
           key: ${{ env.DATA }}
+          path: ${{ env.DATA }}
+          enableCrossOsArchive: true
           fail-on-cache-miss: true
 
       - name: Install Xspec
@@ -258,8 +260,8 @@ jobs:
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: ${{ env.XSPEC }}
           key: ${{ env.XSPEC }}
+          path: ${{ env.XSPEC }}
           fail-on-cache-miss: true
 
       - name: Install Xspec
