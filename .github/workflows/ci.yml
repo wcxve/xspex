@@ -25,14 +25,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Cache Xspec Conda Package (Linux-x64)
+          - name: Cache Xspec (Linux-x64)
             os: "ubuntu-latest"
 
-          - name: Cache Xspec Conda Package (macOS-arm64)
+          - name: Cache Xspec (macOS-arm64)
             os: "macos-latest"
-    outputs:
-      xspec-fn: ${{ steps.package-info.outputs.xspec-fn }}
-      data-fn: ${{ steps.package-info.outputs.data-fn }}
     defaults:
       run:
         shell: bash -el {0}
@@ -100,10 +97,27 @@ jobs:
 
       - name: Cache Xspec Model Data ${{ env.DATA_VERSION }} (Build ${{ env.DATA_BUILD }})
         id: cache-xspec-model-data
+        if: runner.os == 'Linux'
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/${{ env.DATA_FN }}"
           key: "${{ env.DATA_FN }}"
+          lookup-only: true
+
+      - name: Cache Xspec
+        if: steps.cache-xspec.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
+          key: "${{ runner.os }}-xspec}"
+          lookup-only: true
+
+      - name: Cache Xspec Model Data
+        if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
+          key: "${{ runner.os }}-xspec-data}"
           lookup-only: true
 
       - name: Download Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
@@ -171,15 +185,15 @@ jobs:
       - name: Cache Xspec
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.xspec-fn }}"
-          key: "${{ runner.os }}-${{ needs.cache.outputs.xspec-fn }}"
+          path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
+          key: "${{ runner.os }}-xspec}"
           fail-on-cache-miss: true
 
       - name: Cache Xspec Model Data
         uses: actions/cache@v4
         with:
-          path: "${{ env.CONDA_PKG_DIR }}/${{ needs.cache.outputs.data-fn }}"
-          key: "${{ runner.os }}-${{ needs.cache.outputs.data-fn }}"
+          path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
+          key: "${{ runner.os }}-xspec-data}"
           fail-on-cache-miss: true
 
       - name: Install Xspec
