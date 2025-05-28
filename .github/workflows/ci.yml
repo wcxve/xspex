@@ -64,20 +64,21 @@ jobs:
           echo "FN=$fn" >> "$GITHUB_ENV"
           echo "fn=$fn" >> "$GITHUB_OUTPUT"
 
+      - name: Cache Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
+        id: cache-xspec-model-data
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FN }}
+          key: ${{ env.FN }}
+
       - name: Download Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
+        if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
         run: |
           aria2c -x 16 -s 16 --show-console-readout=true "$URL"
           if [ ! -f "$FN" ]; then
             echo "Failed to download from $URL"
             exit 1  # Exit with a non-zero status to fail the job
           fi
-
-      - name: Upload Xspec Model Data as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.FN }}
-          path: ${{ env.FN }}
-          retention-days: 1
 
   tests:
     name: ${{ matrix.name }}
@@ -107,10 +108,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Xspec Model Data
-        uses: actions/download-artifact@v4
+      - name: Cache Xspec Model Data
+        uses: actions/cache@v4
         with:
-          name: ${{ needs.download.outputs.data-fn }}
+          path: ${{ needs.download.outputs.data-fn }}
+          key: ${{ needs.download.outputs.data-fn }}
+          fail-on-cache-miss: true
 
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
