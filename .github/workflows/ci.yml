@@ -20,11 +20,16 @@ env:
 
 jobs:
   download:
-    name: Cache Xspec Conda Package
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
+        include:
+          - name: Cache Xspec Conda Package (Linux-x64)
+            os: "ubuntu-latest"
+
+          - name: Cache Xspec Conda Package (macOS-arm64)
+            os: "macos-latest"
     outputs:
       xspec-fn: ${{ steps.package-info.outputs.xspec-fn }}
       data-fn: ${{ steps.package-info.outputs.data-fn }}
@@ -60,6 +65,7 @@ jobs:
             '
           }
 
+          mamba info --json
           pkg_dir=$(conda info --json | jq '.pkgs_dirs[0]')
           echo "CONDA_PKG_DIR=$pkg_dir" >> "$GITHUB_ENV"
 
@@ -126,7 +132,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Tests (Python 3.13 in Linux-x86_64)
+          - name: Tests (Python 3.13 in Linux-x64)
             os: "ubuntu-latest"
             python-version: "3.13"
             uv-resolution: "highest"
