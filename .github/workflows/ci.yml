@@ -109,7 +109,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-xspec}"
+          key: "${{ runner.os }}-Xspec}"
           lookup-only: true
 
       - name: Cache Xspec Model Data
@@ -117,7 +117,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
-          key: "${{ runner.os }}-xspec-data}"
+          key: "${{ runner.os }}-Xspec-Data}"
           lookup-only: true
 
       - name: Download Xspec ${{ env.XSPEC_VERSION }} (Build ${{ env.XSPEC_BUILD }})
@@ -186,14 +186,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-xspec}"
+          key: "${{ runner.os }}-Xspec}"
           fail-on-cache-miss: true
 
       - name: Cache Xspec Model Data
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/xspec-data-*.conda"
-          key: "${{ runner.os }}-xspec-data}"
+          key: "${{ runner.os }}-Xspec-Data}"
           fail-on-cache-miss: true
 
       - name: Install Xspec
@@ -255,7 +255,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: "${{ env.CONDA_PKG_DIR }}/xspec-??.??*-.conda"
-          key: "${{ runner.os }}-xspec}"
+          key: "${{ runner.os }}-Xspec}"
           fail-on-cache-miss: true
 
       - name: Install Xspec
