@@ -124,7 +124,7 @@ jobs:
 
       - name: Save Package Info as Artifact
         run: |
-          echo "{'xspec':'$PKG_DIR/$XSPEC_FN','data':'$PKG_DIR/$DATA_FN'}" > pkg.json
+          echo "{\"xspec\":\"$PKG_DIR/$XSPEC_FN\",\"data\":\"$PKG_DIR/$DATA_FN\"}" > pkg.json
 
       - name: Upload Package Info
         uses: actions/upload-artifact@v4
@@ -176,7 +176,6 @@ jobs:
 
       - name: Parse Package Info
         run: |
-          cat pkg.json
           xspec=$(cat pkg.json | jq -r '.xspec')
           data=$(cat pkg.json | jq -r '.data')
           echo "XSPEC=$xspec" >> "$GITHUB_ENV"
