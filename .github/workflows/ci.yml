@@ -125,6 +125,7 @@ jobs:
       - name: Save Package Info as Artifact
         run: |
           echo "{'xspec':'$PKG_DIR/$XSPEC_FN','data':'$PKG_DIR/$DATA_FN'}" > pkg.json
+          cat pkg.json
 
       - name: Upload Package Info
         uses: actions/upload-artifact@v4
