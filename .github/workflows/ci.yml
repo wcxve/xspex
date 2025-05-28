@@ -45,9 +45,16 @@ jobs:
               .result.pkgs
               | sort_by(
                   (
-                    .version | split(".") | map(tonumber) + [0, 0]
-                  )[0:3]
-                  + [.build_number]
+                    .version
+                    | capture("^(?<major>\\d+)(\\.(?<minor>\\d+))?(\\.(?<patch>\\d+))?(?<suffix>[a-z]*)?")
+                    | {
+                        major: (.major | tonumber),
+                        minor: (.minor // "0" | tonumber),
+                        patch: (.patch // "0" | tonumber),
+                        suffix: .suffix
+                      }
+                  ) + { build: .build_number }
+                  | [ .major, .minor, .patch, .suffix, .build ]
                 )
               | .[-1]
             '
