@@ -20,7 +20,7 @@ env:
 
 jobs:
   download:
-    name: Download Xspec Model Data
+    name: Cache Xspec Model Data
     runs-on: ubuntu-latest
     outputs:
       data-fn: ${{ steps.get_info.outputs.fn }}
