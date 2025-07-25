@@ -1,19 +1,17 @@
+from __future__ import annotations
+
+import chex
 import jax
 
-import xspex as x
+chex.set_n_cpu_devices(4)
 
-# We want to ensure we have a fixed abundance / cross section
-# for the tests. If we didn't set them here then it would depend
-# on the user's ~/.xspec/Xspec.init file
-x.abundance('lodd')
-x.cross_section('vern')
-
-# Set nei version
-version = x.version().split('.')
-major = int(version[0])
-minor = int(version[1])
-if major > 12 or (major == 12 and minor >= 15):
-    x.set_model_string('NEIVERS', '3.1.2')
-
-# Set JAX float precision to double
+# Use double precision in JAX
 jax.config.update('jax_enable_x64', True)
+
+# # Set NEI version used in XSPEC
+# Xset.addModelString('NEIVERS', '3.1.2')
+# version = xx.xspec_version().split('.')
+# major = int(version[0])
+# minor = int(version[1])
+# if major > 12 or (major == 12 and minor >= 15):
+#     xx.set_mstr('NEIVERS', '3.1.2')

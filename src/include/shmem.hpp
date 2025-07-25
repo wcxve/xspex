@@ -1,0 +1,158 @@
+#ifndef XSPEX_SHMEM_HPP_
+#define XSPEX_SHMEM_HPP_
+
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+
+namespace xspex::shmem
+{
+template <typename T>
+class SharedMemory
+{
+   public:
+    SharedMemory() = delete;
+    SharedMemory(const SharedMemory&) = delete;
+    SharedMemory& operator=(const SharedMemory&) = delete;
+
+    explicit SharedMemory(const std::string& name,
+                          const size_t size,
+                          const bool create,
+                          const bool unlink_after_open)
+        : shm_name_{name}, ptr_{nullptr}, size_{size}, is_owner_{create}
+    {
+        int shm_fd = -1;
+        if (create) {
+            // Remove the named shared memory if it already exists
+            shm_unlink(name.c_str());
+
+            // Create the named shared memory =
+            shm_fd = shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+            if (shm_fd == -1) {
+                std::ostringstream oss;
+                oss << "failed to create shared memory (" << name
+                    << "): " << strerror(errno);
+                throw std::runtime_error(oss.str());
+            }
+
+            if (ftruncate(shm_fd, static_cast<off_t>(size_in_bytes())) ==
+                -1) {
+                close(shm_fd);
+                shm_unlink(name.c_str());
+                std::ostringstream oss;
+                oss << "failed to allocate size=" << size_in_bytes()
+                    << " for shared memory (" << name
+                    << "): " << strerror(errno);
+                throw std::runtime_error(oss.str());
+            }
+        } else {
+            shm_fd = shm_open(name.c_str(), O_RDWR, 0600);
+            if (shm_fd == -1) {
+                std::ostringstream oss;
+                oss << "failed to open shared memory (" << name
+                    << "): " << strerror(errno);
+                throw std::runtime_error(oss.str());
+            }
+            if (unlink_after_open) {
+                shm_unlink(name.c_str());
+            }
+        }
+
+        // Map the memory
+        void* addr = mmap(nullptr,
+                            size_in_bytes(),
+                            PROT_READ | PROT_WRITE,
+                            MAP_SHARED,
+                            shm_fd,
+                            0);
+        if (addr == MAP_FAILED) {
+            close(shm_fd);
+            if (is_owner_) {
+                shm_unlink(name.c_str());
+            }
+            std::ostringstream oss;
+            oss << "failed to map shared memory (" << name
+                << "): " << strerror(errno);
+            throw std::runtime_error(oss.str());
+        }
+
+        ptr_ = static_cast<T*>(addr);
+
+        if (is_owner_) {
+            new (ptr_) T();
+        }
+    }
+
+    ~SharedMemory()
+    {
+        cleanup();
+        if (is_owner_) {
+            shm_unlink(shm_name_.c_str());
+        }
+    }
+
+    SharedMemory(SharedMemory&& other) noexcept
+        : shm_name_{std::move(other.shm_name_)},
+          ptr_{other.ptr_},
+          size_{other.size_},
+          is_owner_{other.is_owner_}
+    {
+        other.ptr_ = nullptr;
+        other.size_ = 0;
+        other.is_owner_ = false;
+    }
+
+    SharedMemory& operator=(SharedMemory&& other) noexcept
+    {
+        if (this != &other) {
+            cleanup();
+            shm_name_ = std::move(other.shm_name_);
+            ptr_ = other.ptr_;
+            size_ = other.size_;
+            is_owner_ = other.is_owner_;
+            other.ptr_ = nullptr;
+            other.size_ = 0;
+            other.is_owner_ = false;
+        }
+        return *this;
+    }
+
+    [[nodiscard]] std::string name() const { return shm_name_; }
+
+    [[nodiscard]] bool is_owner() const { return is_owner_; }
+
+    // Get the pointer to the mapped memory
+    [[nodiscard]] T* ptr() const { return ptr_; }
+
+    // Get the size
+    [[nodiscard]] size_t size() const { return size_; }
+
+    // Get the size in bytes
+    [[nodiscard]] size_t size_in_bytes() const { return size_ * sizeof(T); }
+
+   private:
+    std::string shm_name_;
+    T* ptr_;
+    size_t size_;
+    bool is_owner_;
+
+    void cleanup() noexcept
+    {
+        if (ptr_) {
+            munmap(ptr_, size_in_bytes());
+            ptr_ = nullptr;
+            size_ = 0;
+        }
+    }
+};
+}  // namespace xspex::shmem
+
+#endif  // XSPEX_SHMEM_HPP_
