@@ -1,7 +1,7 @@
 [project]
 name = "xspex"
 version = "0.1.0"
-description = "JAX/XLA interface for XSPEC spectral models."
+description = "JAX interface for XSPEC spectral models."
 readme = "README.md"
 requires-python = ">=3.10,<=3.13"
 license = "GPL-3.0-or-later"
@@ -55,7 +55,7 @@ run.concurrency = [
 ]
 run.parallel = true
 run.sigterm = true
-run.source_dirs = ["src"]
+run.source_dirs = ["src/xspex"]
 report.exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
