@@ -20,7 +20,7 @@ env:
 
 jobs:
   download:
-    name: Cache Xspec Model Data
+    name: Cache XSPEC Model Data
     runs-on: ubuntu-latest
     outputs:
       data-fn: ${{ steps.get_info.outputs.fn }}
@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get install -y aria2 jq
 
-      - name: Get Latest Version of Xspec Model Data
+      - name: Get Latest Version of XSPEC Model Data
         id: get_info
         run: |
           get_latest_pkg() {
@@ -71,7 +71,7 @@ jobs:
           echo "FN=$fn" >> "$GITHUB_ENV"
           echo "fn=$fn" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
+      - name: Cache XSPEC Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
         id: cache-xspec-model-data
         uses: actions/cache@v4
         with:
@@ -79,7 +79,7 @@ jobs:
           key: ${{ env.FN }}
           lookup-only: true
 
-      - name: Download Xspec Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
+      - name: Download XSPEC Model Data ${{ env.VERSION }} (Build ${{ env.BUILD }})
         if: steps.cache-xspec-model-data.outputs.cache-hit != 'true'
         run: |
           aria2c -x 16 -s 16 --show-console-readout=true "$URL"
@@ -107,7 +107,7 @@ jobs:
 
           - name: Tests (Lowest Version Deps)
             os: "ubuntu-latest"
-            python-version: "3.9"
+            python-version: "3.10"
             uv-resolution: "lowest-direct"
     defaults:
       run:
@@ -116,7 +116,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Cache Xspec Model Data
+      - name: Cache XSPEC Model Data
         uses: actions/cache@v4
         with:
           path: ${{ needs.download.outputs.data-fn }}
@@ -132,7 +132,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Install Xspec
+      - name: Install XSPEC
         run: |
           mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
           conda install --use-local ${{ needs.download.outputs.data-fn }} -y
@@ -182,7 +182,7 @@ jobs:
           miniforge-version: latest
           python-version: "3.13"
 
-      - name: Install Xspec
+      - name: Install XSPEC
         run: |
           mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
 

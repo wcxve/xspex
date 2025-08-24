@@ -5,11 +5,11 @@
 [![License: GPL v3](https://img.shields.io/github/license/wcxve/xspex?color=blue&logo=open-source-initiative&logoColor=white&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)<br>
 [![Coverage Status](https://img.shields.io/codecov/c/github/wcxve/xspex?logo=Codecov&logoColor=white&style=for-the-badge)](https://app.codecov.io/github/wcxve/xspex)
 
-Access Xspec models and corresponding JAX/XLA ops, based on [xspec_models_cxc](https://github.com/cxcsds/xspec-models-cxc/) and [extending-jax](https://github.com/dfm/extending-jax).
+Access XSPEC models and corresponding JAX/XLA ops, based on [xspec_models_cxc](https://github.com/cxcsds/xspec-models-cxc/) and [extending-jax](https://github.com/dfm/extending-jax).
 
 ## Installation
 
-Note: ``HEASoft`` & ``Xspec v12.12.1+`` are required to be installed on your system.
+Note: ``HEASoft`` & ``XSPEC v12.12.1+`` are required to be installed on your system.
 You can download it from [here](https://heasarc.gsfc.nasa.gov/lheasoft/).
 
 ```bash
