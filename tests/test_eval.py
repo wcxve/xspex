@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 from jax import numpy as jnp
-from mxspec import callModelFunction
 from numpy.testing import assert_allclose
+from xspec import callModelFunction
 
 import xspex as xx
 from xspex._xspec.types import XspecModelType

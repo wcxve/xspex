@@ -38,6 +38,7 @@ def test_list_models():
     models_mul = xx.list_models('mul')
     models_con = xx.list_models('con')
     assert models_all == models_add + models_mul + models_con
+    assert len(set(models_all)) == len(models_all)
 
     # Not supported models
     with pytest.raises(NotImplementedError):
