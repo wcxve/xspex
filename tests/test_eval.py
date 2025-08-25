@@ -164,4 +164,9 @@ def test_model_eval(name: str):
         val_xx = fn(p, e, jnp.ones(n_model), 1)
         val_xs = [1.0] * n_model
         callModelFunction(mname, e_, p_, val_xs)
-    assert_allclose(val_xx, val_xs)
+    val_xs = jnp.array(val_xs)
+    assert_allclose(
+        val_xx,
+        val_xs,
+        err_msg=f'diff at {jnp.flatnonzero(~jnp.isclose(val_xx, val_xs))}',
+    )
