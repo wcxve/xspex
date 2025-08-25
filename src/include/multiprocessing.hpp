@@ -233,17 +233,18 @@ class WorkerProcessManager
 
     void terminate_worker_process() noexcept
     {
-        if (worker_pid_ <= 0) {
+        const auto worker_pid = worker_pid_;
+        if (worker_pid <= 0) {
             return;
         }
 
         const auto process_str = "worker process (device " +
                                  std::to_string(device_id_) + ", pid " +
-                                 std::to_string(worker_pid_) + ")";
+                                 std::to_string(worker_pid) + ")";
 
         try {
             // Send SIGTERM to the worker process
-            if (kill(worker_pid_, SIGTERM) != 0) {
+            if (kill(worker_pid, SIGTERM) != 0) {
                 std::cerr << "failed to send SIGTERM to " << process_str
                           << ": " << strerror(errno) << std::endl;
             }
@@ -256,8 +257,8 @@ class WorkerProcessManager
             bool worker_exited = false;
             const auto end_time = start + timeout;
             while (std::chrono::steady_clock::now() < end_time) {
-                const int ret = waitpid(worker_pid_, &status, WNOHANG);
-                if (ret == worker_pid_) {
+                const int ret = waitpid(worker_pid, &status, WNOHANG);
+                if (ret == worker_pid) {
                     worker_exited = true;
                     break;
                 } else if (ret == -1) {
@@ -277,9 +278,9 @@ class WorkerProcessManager
             if (!worker_exited) {
                 // Force kill the worker process after timeout
                 std::cerr << "force killing " << process_str << std::endl;
-                if (kill(worker_pid_, SIGKILL) == 0) {
+                if (kill(worker_pid, SIGKILL) == 0) {
                     // Wait for the zombie process to be cleaned up
-                    waitpid(worker_pid_, nullptr, 0);
+                    waitpid(worker_pid, nullptr, 0);
                 }
             }
         } catch (const std::exception& e) {
@@ -550,7 +551,7 @@ class WorkerProcessPool
     }
 
     // Sync XFLT entries to XSPEC in current process
-    void sync_xflt_to_xspec() { xspec_config_manager_.xflt.sync_from_shmem(); }
+    void xflt_sync_to_xspec() { xspec_config_manager_.xflt.sync_from_shmem(); }
 
     TaskStatus evaluate_model(const int32_t device_id,
                               const uint32_t func_id,

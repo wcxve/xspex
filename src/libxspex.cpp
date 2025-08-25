@@ -18,7 +18,7 @@ NB_MODULE(libxspex, m)
           &xspex::interface::get_chatter,
           "Get XSPEC console chatter level.");
 
-    m.def("set_chatter",
+    m.def("chatter",
           &xspex::interface::set_chatter,
           "level"_a,
           "Set XSPEC console chatter level.");
@@ -27,12 +27,12 @@ NB_MODULE(libxspex, m)
           &xspex::interface::get_abund,
           "Get abundance table used in XSPEC.");
 
-    m.def("set_abund",
+    m.def("abund",
           &xspex::interface::set_abund,
           "table"_a,
           "Set abundance table used in XSPEC.");
 
-    m.def("set_abund_file",
+    m.def("abund_file",
           &xspex::interface::set_abund_file,
           "file"_a,
           "Set abundance file used in XSPEC.");
@@ -41,7 +41,7 @@ NB_MODULE(libxspex, m)
           &xspex::interface::get_xsect,
           "Get photo-electric cross-section table used in XSPEC.");
 
-    m.def("set_xsect",
+    m.def("xsect",
           &xspex::interface::set_xsect,
           "table"_a,
           "Set photo-electric cross-section table used in XSPEC.");
@@ -50,9 +50,9 @@ NB_MODULE(libxspex, m)
           &xspex::interface::get_cosmo,
           "Get cosmological parameters used in XSPEC.");
 
-    m.def("set_cosmo",
+    m.def("cosmo",
           &xspex::interface::set_cosmo,
-          "h0"_a,
+          "H0"_a,
           "q0"_a,
           "lambda0"_a,
           "Set cosmological parameters used in XSPEC.");
@@ -70,13 +70,13 @@ NB_MODULE(libxspex, m)
           "key"_a,
           "Get model string for a given key.");
 
-    m.def("set_mstr",
+    m.def("mstr",
           &xspex::interface::set_mstr,
           "key"_a,
           "value"_a,
           "Set model string for a given key.");
 
-    m.def("set_mstr",
+    m.def("mstr",
           &xspex::interface::set_mstrs,
           "dic"_a,
           "Set multiple model strings.");
@@ -92,13 +92,13 @@ NB_MODULE(libxspex, m)
           "spec_num"_a,
           "Get XFLT entries for a given spectrum number.");
 
-    m.def("set_xflt",
+    m.def("xflt",
           &xspex::interface::set_xflt,
           "spec_num"_a,
           "dic"_a,
           "Set XFLT entries for a given spectrum number.");
 
-    m.def("set_xflt",
+    m.def("xflt",
           &xspex::interface::set_xflts,
           "maps"_a,
           "Set multiple XFLT entries for multiple spectra.");
@@ -112,7 +112,11 @@ NB_MODULE(libxspex, m)
           &xspex::interface::clear_all_xflt,
           "Clear all XFLT entries.");
 
-    m.def("_sync_xflt_to_xspec",
-          &xspex::interface::sync_xflt_to_xspec,
+    m.def("xflt_sync_to_xspec",
+          &xspex::interface::xflt_sync_to_xspec,
           "Sync XFLT entries to XSPEC in current process.");
+
+    m.def("clear_xflt_xspec",
+          &xspex::interface::clear_xflt_xspec,
+          "Clear all XFLT entries of XSPEC in current process.");
 }

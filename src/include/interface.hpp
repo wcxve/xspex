@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 
+#include "XSFunctions/Utilities/FunctionUtility.h"
 #include "config.hpp"
 #include "multiprocessing.hpp"
 
@@ -114,7 +115,9 @@ inline void clear_all_xflt()
     throw_if_failed("clear all XFLT", pool().clear_xflt());
 }
 
-inline void sync_xflt_to_xspec() { pool().sync_xflt_to_xspec(); }
+inline void xflt_sync_to_xspec() { pool().xflt_sync_to_xspec(); }
+
+inline void clear_xflt_xspec() { FunctionUtility::clearXFLT(); }
 
 inline TaskStatus evaluate_model(const int32_t device_id,
                                  const uint32_t func_id,

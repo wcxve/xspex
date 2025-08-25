@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import jax.numpy as jnp
+import numpy as np
 import pytest
 import xspec
-from jax import numpy as jnp
 from numpy.testing import assert_allclose
 
 import xspex as xx
@@ -161,14 +162,45 @@ def test_model_eval(name: str):
         val_xx = fn(p, e, jnp.ones(n_model), 1)
         val_xs = [1.0] * n_model
         xspec.callModelFunction(mname, e_, p_, val_xs)
-    val_xs = jnp.array(val_xs)
     try:
         assert_allclose(
             val_xx,
             val_xs,
-            err_msg=f'diff at {jnp.flatnonzero(~jnp.isclose(val_xx, val_xs))}',
+            err_msg=f'diff at {np.flatnonzero(~np.isclose(val_xx, val_xs))}',
         )
     except AssertionError as e:
         if name in MODELS_XFAIL:
             pytest.xfail('occasional failures')
         raise e
+
+
+def test_larger_egrid_size_eval():
+    """Test model evaluation with a larger egrid size.
+
+    This test is to check if the model evaluation is correct when the egrid
+    size is larger than the default size, which will trigger the memory
+    allocation in the xspex worker.
+    """
+    pl, _ = xx.get_model('powerlaw')
+
+    egrid = jnp.linspace(0.01, 100.0, 8192)
+    p = jnp.array([1.0], dtype=jnp.float64)
+    val_xx = pl(p, egrid, 1)
+    xspec.callModelFunction(
+        'powerlaw', egrid.tolist(), p.tolist(), val_xs := []
+    )
+    assert_allclose(
+        val_xx,
+        val_xs,
+        err_msg=f'diff at {np.flatnonzero(~np.isclose(val_xx, val_xs))}',
+    )
+
+    cflux, _ = xx.get_model('cflux')
+    p = jnp.array([1.0, 100.0, 1.0], dtype=jnp.float64)
+    val_xx = cflux(p, egrid, val_xx, 1)
+    xspec.callModelFunction('cflux', egrid.tolist(), p.tolist(), val_xs)
+    assert_allclose(
+        val_xx,
+        val_xs,
+        err_msg=f'diff at {np.flatnonzero(~np.isclose(val_xx, val_xs))}',
+    )
