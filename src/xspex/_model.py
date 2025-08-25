@@ -17,18 +17,14 @@ if TYPE_CHECKING:
 
 __all__ = ['get_model', 'list_models']
 
-_XLA_FFI_HANDLERS = xla_ffi_handlers()
+# Only include additive, multiplicative, and convolution models
 _MODELS_INFO: dict[str, XspecModel] = {
     k: v
     for k, v in get_models_info().items()
-    if v.type  # Only include additive, multiplicative, and convolution models
-    in {
-        XspecModelType.Add,
-        XspecModelType.Mul,
-        XspecModelType.Con,
-    }
+    if v.type in {XspecModelType.Add, XspecModelType.Mul, XspecModelType.Con}
 }
 _MODELS: dict[str, Callable] = {}
+_XLA_FFI_HANDLERS = xla_ffi_handlers()
 
 
 def get_model(name: str) -> tuple[Callable, XspecModel]:

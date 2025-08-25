@@ -69,7 +69,7 @@ inline void initialize_xspec_cosmology()
     }
 
     std::cerr << "Faild to get cosmology settings from initialization file, "
-                 "default to H0=70.0, q0=0.0, lamba0=0.73\n";
+                 "default to H0=70.0, q0=0.0, lambda0=0.73\n";
     FunctionUtility::setFunctionCosmoParams(70.0, 0.0, 0.73);
 }
 

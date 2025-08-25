@@ -88,7 +88,7 @@ lint.ignore = [
   "C901",  # allow functions with a high complexity
   "E731",  # allow lambda functions
 ]
-lint.isort.known-first-party = ["src"]
+lint.isort.known-first-party = ["xspex"]
 lint.isort.combine-as-imports = true
 lint.select = [
   "E",  # pycodestyle errors

@@ -828,7 +828,7 @@ class XFLTWrapper : public XspecXFLTWrapper
         }
 
         // Update spec_num and spec_num_count
-        if (existing_count == 0) {
+        if (insert_count > 0) {
             shmem_->spec_num[shmem_->spec_num_count] = spec_num;
             shmem_->spec_num_count++;
         }
@@ -1213,47 +1213,52 @@ class MutexCondWrapper
         shmem_->flag = false;
 
         // Initialize mutex
-        auto mutex_attr = std::unique_ptr<pthread_mutexattr_t,
-                                          int (*)(pthread_mutexattr_t*)>(
-            new pthread_mutexattr_t(), pthread_mutexattr_destroy);
-
-        if (pthread_mutexattr_init(mutex_attr.get())) {
+        pthread_mutexattr_t mutex_attr;
+        if (pthread_mutexattr_init(&mutex_attr)) {
             oss << "pthread_mutexattr_init failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
 
-        if (pthread_mutexattr_setpshared(mutex_attr.get(),
+        if (pthread_mutexattr_setpshared(&mutex_attr,
                                          PTHREAD_PROCESS_SHARED)) {
+            pthread_mutexattr_destroy(&mutex_attr);
             oss << "pthread_mutexattr_setpshared failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
-        if (pthread_mutex_init(&shmem_->mutex, mutex_attr.get())) {
+
+        if (pthread_mutex_init(&shmem_->mutex, &mutex_attr)) {
+            pthread_mutexattr_destroy(&mutex_attr);
             oss << "pthread_mutex_init failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
 
-        // Initialize cond
-        auto cond_attr =
-            std::unique_ptr<pthread_condattr_t, int (*)(pthread_condattr_t*)>(
-                new pthread_condattr_t(), pthread_condattr_destroy);
+        // Clean up mutex attributes after successful init
+        pthread_mutexattr_destroy(&mutex_attr);
 
-        if (pthread_condattr_init(cond_attr.get())) {
+        // Initialize cond
+        pthread_condattr_t cond_attr;
+        if (pthread_condattr_init(&cond_attr)) {
             pthread_mutex_destroy(&shmem_->mutex);  // Clean up mutex
             oss << "pthread_condattr_init failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
 
-        if (pthread_condattr_setpshared(cond_attr.get(),
-                                        PTHREAD_PROCESS_SHARED)) {
+        if (pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED)) {
+            pthread_condattr_destroy(&cond_attr);
             pthread_mutex_destroy(&shmem_->mutex);  // Clean up mutex
             oss << "pthread_condattr_setpshared failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
-        if (pthread_cond_init(&shmem_->cond, cond_attr.get())) {
+
+        if (pthread_cond_init(&shmem_->cond, &cond_attr)) {
+            pthread_condattr_destroy(&cond_attr);
             pthread_mutex_destroy(&shmem_->mutex);  // Clean up mutex
             oss << "pthread_cond_init failed: " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
+
+        // Clean up cond attributes after successful init
+        pthread_condattr_destroy(&cond_attr);
     }
 
     void destroy() const noexcept
