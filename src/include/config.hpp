@@ -852,41 +852,33 @@ class XFLTWrapper : public XspecXFLTWrapper
             throw std::runtime_error("XFLT database is modified");
         }
 
-        // Find the first matching index and counts
-        uint32_t first_del_idx = shmem_->size;
-        uint32_t del_count = 0;
-        for (uint32_t i = 0; i < shmem_->size; ++i) {
-            if (shmem_->entries[i].spec_num == spec_num) {
-                if (first_del_idx == shmem_->size) {
-                    first_del_idx = i;
-                }
-                ++del_count;
+        uint32_t write = 0;
+        uint32_t removed = 0;
+        for (uint32_t read = 0; read < shmem_->size; ++read) {
+            const auto& e = shmem_->entries[read];
+            if (e.spec_num == spec_num) {
+                ++removed;
+                continue;
             }
+            if (write != read) {
+                std::memmove(&shmem_->entries[write],
+                             &shmem_->entries[read],
+                             sizeof(XspecConfig::XFLTDB::XFLTEntry));
+            }
+            ++write;
         }
 
-        if (del_count == 0) {
+        // Zero trailing space
+        if (removed) {
+            std::memset(&shmem_->entries[write],
+                        0,
+                        removed * sizeof(XspecConfig::XFLTDB::XFLTEntry));
+        }
+        shmem_->size = write;
+
+        if (removed == 0) {
             return;
         }
-
-        using XFLTEntry = XspecConfig::XFLTDB::XFLTEntry;
-
-        // Address of the subsequent entries
-        XFLTEntry* src = &shmem_->entries[first_del_idx + del_count];
-        // Destination to move the subsequent entries to
-        XFLTEntry* dest = &shmem_->entries[first_del_idx];
-        // Count of entries to move
-        size_t move_count = shmem_->size - (first_del_idx + del_count);
-
-        if (move_count > 0) {
-            // Move the subsequent entries to the destination
-            std::memmove(dest, src, move_count * sizeof(XFLTEntry));
-        }
-
-        // Clear the trailing extra space
-        std::memset(&shmem_->entries[shmem_->size - del_count],
-                    0,
-                    del_count * sizeof(XFLTEntry));
-        shmem_->size -= del_count;
 
         // Update spec_num and spec_num_count
         for (uint32_t i = 0; i < shmem_->spec_num_count; ++i) {

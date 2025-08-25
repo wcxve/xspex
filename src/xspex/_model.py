@@ -21,7 +21,7 @@ _XLA_FFI_HANDLERS = xla_ffi_handlers()
 _MODELS_INFO: dict[str, XspecModel] = {
     k: v
     for k, v in get_models_info().items()
-    if v.type
+    if v.type  # Only include additive, multiplicative, and convolution models
     in {
         XspecModelType.Add,
         XspecModelType.Mul,
@@ -155,7 +155,7 @@ def _check_input(n_params, params, egrid, spec_num=None, model=None):
     if model is not None:
         if not (jnp.ndim(model) == 1 and jnp.dtype(model) == jnp.float64):
             raise ValueError(
-                'egrid must be a 1-D array with dtype float64, got '
+                'model must be a 1-D array with dtype float64, got '
                 f'shape={jnp.shape(model)} and dtype={jnp.dtype(model)}'
             )
         if len(egrid) != len(model) + 1:

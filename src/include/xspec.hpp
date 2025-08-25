@@ -28,13 +28,17 @@ inline void initialize_xspec_cosmology()
     double q{0}, h{0}, l{0};
 
     // Read the user's settings
-    const std::string HOME = getenv("HOME");
-    const std::string user_path = HOME + "/.xspec/Xspec.init";
-    std::map<std::string, std::string> user_settings =
-        XSutility::readSettingsFile(user_path);
+    std::string user_path;
+    std::map<std::string, std::string> user_settings;
+    const char* home_env = getenv("HOME");
+    if (home_env && *home_env) {
+        user_path = std::string(home_env) + "/.xspec/Xspec.init";
+        user_settings = XSutility::readSettingsFile(user_path);
+    }
     it = user_settings.find("COSMO");
     if (it != user_settings.end()) {
         try {
+            cosmo.clear();
             cosmo.str(it->second);
             cosmo >> h >> q >> l;
             FunctionUtility::setFunctionCosmoParams(h, q, l);
@@ -53,6 +57,7 @@ inline void initialize_xspec_cosmology()
     it = defaultSettings.find("COSMO");
     if (it != defaultSettings.end()) {
         try {
+            cosmo.clear();
             cosmo.str(it->second);
             cosmo >> h >> q >> l;
             FunctionUtility::setFunctionCosmoParams(h, q, l);

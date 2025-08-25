@@ -111,8 +111,8 @@ target_include_directories(
 )
 # Define the XSPEC models macros for auto-generated function definitions
 target_compile_definitions(includes INTERFACE
-    XSPEC_MODEL_LIST=${XSPEC_MODELS}
-    XSPEC_CON_MODEL_LIST=${XSPEC_CON_MODELS}
+    "XSPEC_MODEL_LIST=${XSPEC_MODELS}"
+    "XSPEC_CON_MODEL_LIST=${XSPEC_CON_MODELS}"
 )
 
 # Install the worker binary

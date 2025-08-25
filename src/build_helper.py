@@ -101,16 +101,25 @@ def main():
 
     args = parser.parse_args()
 
-    if args.function == 'print_headas_library_path':
+    allowed_functions = {
+        'print_xla_include_dir': print_xla_include_dir,
+        'print_headas_include_dir': print_headas_include_dir,
+        'print_headas_lib_dir': print_headas_lib_dir,
+        'print_headas_library_path': print_headas_library_path,
+        'print_xspec_models': print_xspec_models,
+        'print_xspec_con_models': print_xspec_con_models,
+    }
+
+    if args.function not in allowed_functions:
+        raise ValueError(f'Unknown function: {args.function}')
+    elif args.function == 'print_headas_library_path':
         if len(args.args) != 1:
             raise ValueError(
                 'print_headas_library_path requires 1 argument: name'
             )
         print_headas_library_path(args.args[0])
-    elif args.function in globals():
-        globals()[args.function]()
     else:
-        raise ValueError(f'Unknown function: {args.function}')
+        allowed_functions[args.function]()
 
 
 if __name__ == '__main__':

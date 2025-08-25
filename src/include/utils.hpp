@@ -126,7 +126,7 @@ inline std::string map_to_json(
     return oss.str();
 }
 
-static uint32_t next_power_of_two(uint32_t n) noexcept
+inline uint32_t next_power_of_two(uint32_t n) noexcept
 {
     if (n <= 1) return 2;
 

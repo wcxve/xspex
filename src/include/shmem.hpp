@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace xspex::shmem
 {
@@ -43,8 +44,7 @@ class SharedMemory
                 throw std::runtime_error(oss.str());
             }
 
-            if (ftruncate(shm_fd, static_cast<off_t>(size_in_bytes())) ==
-                -1) {
+            if (ftruncate(shm_fd, static_cast<off_t>(size_in_bytes())) == -1) {
                 close(shm_fd);
                 shm_unlink(name.c_str());
                 std::ostringstream oss;
@@ -68,11 +68,11 @@ class SharedMemory
 
         // Map the memory
         void* addr = mmap(nullptr,
-                            size_in_bytes(),
-                            PROT_READ | PROT_WRITE,
-                            MAP_SHARED,
-                            shm_fd,
-                            0);
+                          size_in_bytes(),
+                          PROT_READ | PROT_WRITE,
+                          MAP_SHARED,
+                          shm_fd,
+                          0);
         if (addr == MAP_FAILED) {
             close(shm_fd);
             if (is_owner_) {
@@ -86,8 +86,20 @@ class SharedMemory
 
         ptr_ = static_cast<T*>(addr);
 
+        close(shm_fd);
+
         if (is_owner_) {
-            new (ptr_) T();
+            static_assert(
+                std::is_trivially_destructible_v<T>,
+                "T must be trivially destructible when placed in shmem");
+            if (size_ == 1) {
+                // Only value-initialize a single object payload (e.g.,
+                // structs).
+                new (ptr_) T();
+            } else {
+                // For POD buffers, zero-initialize for deterministic reads.
+                std::memset(ptr_, 0, size_in_bytes());
+            }
         }
     }
 

@@ -64,9 +64,11 @@ class WorkerProcessManager
     // Move constructor
     WorkerProcessManager(WorkerProcessManager&& other) noexcept
         : device_id_{other.device_id_},
+          worker_pid_{other.worker_pid_},
           monitor_{std::move(other.monitor_)},
           worker_shmem_manager_{std::move(other.worker_shmem_manager_)}
     {
+        other.worker_pid_ = -1;
     }
 
     // Move assignment operator
@@ -80,8 +82,10 @@ class WorkerProcessManager
 
             // Move resources from other
             device_id_ = other.device_id_;
+            worker_pid_ = other.worker_pid_;
             monitor_ = std::move(other.monitor_);
             worker_shmem_manager_ = std::move(other.worker_shmem_manager_);
+            other.worker_pid_ = -1;
         }
         return *this;
     }
