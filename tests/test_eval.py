@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 
 def test_check_input():
     fn_add, info = xx.get_model('powerlaw')
-    p = jnp.array([1.0])
-    e = jnp.array([1.0, 2.0])
-    spec_num = jnp.array(1)
+    p = jnp.array([1.0], dtype=jnp.float64)
+    e = jnp.array([1.0, 2.0], dtype=jnp.float64)
+    spec_num = jnp.array(1, dtype=jnp.int64)
 
     # Test params dimension check
     with pytest.raises(ValueError):
@@ -71,16 +71,20 @@ def test_check_input():
         fn_add(p, e, spec_num.astype(float))
 
     fn_con, info = xx.get_model('cflux')
-    p = jnp.array([1.0, 2.0, 1.0])
-    e = jnp.array([1.0, 2.0])
-    m = jnp.array([1.0])
-    spec_num = jnp.array(1)
+    p = jnp.array([1.0, 2.0, 1.0], dtype=jnp.float64)
+    e = jnp.array([1.0, 2.0], dtype=jnp.float64)
+    m = jnp.array([1.0], dtype=jnp.float64)
+    spec_num = jnp.array(1, dtype=jnp.int64)
 
     # Test input model dimension check
     with pytest.raises(ValueError):
         fn_con(p, e, m[0], spec_num)
     with pytest.raises(ValueError):
         fn_con(p, e, jnp.atleast_2d(m), spec_num)
+
+    # Test input model length check
+    with pytest.raises(ValueError):
+        fn_con(p, e, jnp.append(m, m), spec_num)
 
     # Test input model dtype check
     with pytest.raises(ValueError):
@@ -110,23 +114,32 @@ def get_model_eval_args(
     str,
     Array,
     Array,
-    tuple[float, ...],
-    tuple[float, ...],
+    list[float],
+    list[float],
     bool,
     bool,
 ]:
     fn, info = xx.get_model(name)
-    egrid = jnp.linspace(0.1, 10, 100)
-    egrid_tuple = tuple(egrid.tolist())
-    pars_tuple = tuple(get_default_pars(p) for p in info.parameters)
-    pars = jnp.array(pars_tuple)
+    emin = info.emin if jnp.isfinite(info.emin) else 0.1
+    emax = info.emax if jnp.isfinite(info.emax) else 10.0
+    # clamp to a reasonable testing range
+    emin = max(0.01, emin)
+    emax = min(50.0, emax)
+    if not (emax > emin):
+        pytest.skip(
+            f'invalid energy range for {name}: [{info.emin}, {info.emax}]'
+        )
+    egrid = jnp.linspace(emin, emax, 100)
+    egrid_ = egrid.tolist()
+    pars_ = [get_default_pars(p) for p in info.parameters]
+    pars = jnp.array(pars_)
     return (
         fn,
         info.name,
         pars,
         egrid,
-        pars_tuple,
-        egrid_tuple,
+        pars_,
+        egrid_,
         info.data_depend,
         info.type == XspecModelType.Con,
     )
