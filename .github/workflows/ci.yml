@@ -144,7 +144,8 @@ jobs:
             --resolution ${{ matrix.uv-resolution }}
           uv pip install ".[test]" \
             --overrides requirements.txt \
-            --build-constraint requirements.txt \  # Ensure build and runtime deps match
+            # Ensure build and runtime deps match
+            --build-constraint requirements.txt \
             --verbose
 
       - name: Run Tests
