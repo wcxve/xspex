@@ -173,7 +173,7 @@ class WorkerProcessManager
         worker_pid_ = fork();
         if (worker_pid_ < 0) {
             std::ostringstream oss;
-            oss << "failed to fork worker process for device" << device_id_
+            oss << "failed to fork worker process for device " << device_id_
                 << ": " << strerror(errno);
             throw std::runtime_error(oss.str());
         }
@@ -227,7 +227,7 @@ class WorkerProcessManager
                     worker_shmem_manager_.notify_task_end();
                     worker_pid_ = -1;
                 }
-                sleep(1);
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         });
     }
@@ -255,7 +255,8 @@ class WorkerProcessManager
             const auto start = std::chrono::steady_clock::now();
 
             bool worker_exited = false;
-            while (std::chrono::steady_clock::now() - start < timeout) {
+            const auto end_time = start + timeout;
+            while (std::chrono::steady_clock::now() < end_time) {
                 const int ret = waitpid(worker_pid_, &status, WNOHANG);
                 if (ret == worker_pid_) {
                     worker_exited = true;

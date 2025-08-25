@@ -1,6 +1,5 @@
 #include "worker.hpp"
 
-#include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -17,7 +16,6 @@
 #if defined(__linux__)
 #include <sys/prctl.h>
 
-#include <csignal>
 #include <cstdio>
 #endif
 

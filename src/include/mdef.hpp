@@ -11,14 +11,16 @@
 // 3. Rebuild the project
 
 // Additive and multiplicative models
-#define XSPEC_USER_MODELS  \
-    /*Add your model here: \
-        ENTRY(model_name, n_params)*/
+#define XSPEC_USER_MODELS                                      \
+    /* Add your custom additive/multiplicative models here: */ \
+    /* Example: ENTRY(mymodel, 3)                           */ \
+    /* Leave empty if no custom models                      */
 
 // Convolution model definitions
-#define XSPEC_USER_CON_MODELS \
-    /*Add your model here:     \
-        ENTRY(model_name, n_params)*/
+#define XSPEC_USER_CON_MODELS                                  \
+    /* Add your custom convolution models here:             */ \
+    /* Example: ENTRY(myconvmodel, 2)                       */ \
+    /* Leave empty if no custom models                      */
 
 #ifndef XSPEC_MODEL_LIST
 #define XSPEC_MODEL_LIST

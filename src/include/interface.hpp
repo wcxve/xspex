@@ -14,9 +14,9 @@ namespace xspex::interface
 {
 using TaskStatus = std::pair<bool, std::string>;
 
-static auto& pool() { return multiprocessing::worker_process_pool(); }
+inline auto& pool() { return multiprocessing::worker_process_pool(); }
 
-static void throw_if_failed(const std::string& task_name,
+inline void throw_if_failed(const std::string& task_name,
                             const TaskStatus& status)
 {
     if (!status.first) {

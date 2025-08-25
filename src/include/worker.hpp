@@ -45,7 +45,6 @@ class Worker
                 worker_shmem_manager_.message("unknown error");
             }
         }
-        worker_shmem_manager_.running(false);
     }
 
    private:

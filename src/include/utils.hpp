@@ -241,17 +241,20 @@ inline void check_input(const std::string& model_name,
 
 inline std::string worker_executable_path()
 {
-    Dl_info info;
-    if (dladdr((void*)&worker_executable_path, &info) && info.dli_fname) {
-        std::filesystem::path lib_path = info.dli_fname;
-        std::filesystem::path worker_path =
-            lib_path.parent_path().parent_path() / "bin" / "worker";
-        if (!std::filesystem::exists(worker_path)) {
-            throw std::runtime_error("xspex worker executable not found");
+    static const std::string path = [] {
+        Dl_info info;
+        if (dladdr((void*)&worker_executable_path, &info) && info.dli_fname) {
+            std::filesystem::path lib_path = info.dli_fname;
+            std::filesystem::path worker_path =
+                lib_path.parent_path().parent_path() / "bin" / "worker";
+            if (!std::filesystem::exists(worker_path)) {
+                throw std::runtime_error("xspex worker executable not found");
+            }
+            return worker_path.string();
         }
-        return worker_path.string();
-    }
-    throw std::runtime_error("xspex shared library not found");
+        throw std::runtime_error("xspex shared library not found");
+    }();
+    return path;
 }
 
 inline uint32_t xla_device_number() noexcept
