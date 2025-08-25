@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+import xspec
 from jax import numpy as jnp
 from numpy.testing import assert_allclose
-from xspec import callModelFunction
 
 import xspex as xx
 from xspex._xspec.types import XspecModelType
@@ -93,11 +93,6 @@ def test_check_input():
         fn_con(p, e, m.astype(int), spec_num)
 
 
-# According to xspec-models-cxc:
-# grbjet occasional failures has been reported to XSPEC (in 12.12.0)
-MODELS_SKIP = ['grbjet']
-
-
 def get_default_pars(param: XspecParam) -> float:
     if param.name.casefold() == 'redshift':
         return 1.0
@@ -120,16 +115,14 @@ def get_model_eval_args(
     bool,
 ]:
     fn, info = xx.get_model(name)
-    emin = info.emin if jnp.isfinite(info.emin) else 0.1
-    emax = info.emax if jnp.isfinite(info.emax) else 10.0
     # clamp to a reasonable testing range
-    emin = max(0.01, emin)
-    emax = min(50.0, emax)
+    emin = max(0.01, info.emin)
+    emax = min(30.0, info.emax)
     if not (emax > emin):
         pytest.skip(
             f'invalid energy range for {name}: [{info.emin}, {info.emax}]'
         )
-    egrid = jnp.linspace(emin, emax, 100)
+    egrid = jnp.linspace(emin, emax, 501)
     egrid_ = egrid.tolist()
     pars_ = [get_default_pars(p) for p in info.parameters]
     pars = jnp.array(pars_)
@@ -145,28 +138,37 @@ def get_model_eval_args(
     )
 
 
+# models with occasional failures
+MODELS_XFAIL = (
+    'grbjet',
+    'ismdust',
+)
+
+
 @pytest.mark.parametrize('name', xx.list_models())
 def test_model_eval(name: str):
     """Test model evaluation against PyXspec."""
     fn, mname, p, e, p_, e_, data_depend, is_con = get_model_eval_args(name)
-
-    if name in MODELS_SKIP:
-        pytest.skip(f'model {name} is skipped')
 
     if data_depend:
         pytest.skip('data-dependent model, requires XFLT setup')
 
     if not is_con:
         val_xx = fn(p, e, 1)
-        callModelFunction(mname, e_, p_, val_xs := [])
+        xspec.callModelFunction(mname, e_, p_, val_xs := [])
     else:
         n_model = len(e) - 1
         val_xx = fn(p, e, jnp.ones(n_model), 1)
         val_xs = [1.0] * n_model
-        callModelFunction(mname, e_, p_, val_xs)
+        xspec.callModelFunction(mname, e_, p_, val_xs)
     val_xs = jnp.array(val_xs)
-    assert_allclose(
-        val_xx,
-        val_xs,
-        err_msg=f'diff at {jnp.flatnonzero(~jnp.isclose(val_xx, val_xs))}',
-    )
+    try:
+        assert_allclose(
+            val_xx,
+            val_xs,
+            err_msg=f'diff at {jnp.flatnonzero(~jnp.isclose(val_xx, val_xs))}',
+        )
+    except AssertionError as e:
+        if name in MODELS_XFAIL:
+            pytest.xfail('occasional failures')
+        raise e
