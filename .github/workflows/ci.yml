@@ -142,9 +142,9 @@ jobs:
           uv pip compile pyproject.toml \
             --output-file requirements.txt \
             --resolution ${{ matrix.uv-resolution }}
+          # Ensure build and runtime deps match
           uv pip install ".[test]" \
             --overrides requirements.txt \
-            # Ensure build and runtime deps match
             --build-constraint requirements.txt \
             --verbose
 
