@@ -117,12 +117,12 @@ def get_model_eval_args(
     fn, info = xx.get_model(name)
     # clamp to a reasonable testing range
     emin = max(0.01, info.emin)
-    emax = min(30.0, info.emax)
+    emax = min(100.0, info.emax)
     if not (emax > emin):
         pytest.skip(
             f'invalid energy range for {name}: [{info.emin}, {info.emax}]'
         )
-    egrid = jnp.linspace(emin, emax, 501)
+    egrid = jnp.linspace(emin, emax, 201)
     egrid_ = egrid.tolist()
     pars_ = [get_default_pars(p) for p in info.parameters]
     pars = jnp.array(pars_)
