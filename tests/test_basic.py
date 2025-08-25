@@ -20,6 +20,11 @@ if TYPE_CHECKING:
     from xspex._xspec.types import XspecParam
 
 
+# According to xspec-models-cxc:
+# grbjet occasional failures has been reported to XSPEC (in 12.12.0)
+MODELS_SKIP = ['grbjet']
+
+
 def test_xspec_version():
     assert xx.xspec_version() == Xset.version[1]
 
@@ -86,6 +91,9 @@ def get_model_eval_args(
 def test_model_eval(name: str):
     """Test model evaluation against PyXspec."""
     fn, mname, p, e, p_, e_, data_depend, is_con = get_model_eval_args(name)
+
+    if name in MODELS_SKIP:
+        pytest.skip(f'model {name} is skipped')
 
     if data_depend:
         pytest.skip('data-dependent model, requires XFLT setup')
