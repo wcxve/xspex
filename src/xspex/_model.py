@@ -11,18 +11,13 @@ from xspex._xspec.types import XspecModelType
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Literal
 
     from xspex._xspec.types import XspecModel
 
 __all__ = ['get_model', 'list_models']
 
-# Only include additive, multiplicative, and convolution models
-_MODELS_INFO: dict[str, XspecModel] = {
-    k: v
-    for k, v in get_models_info().items()
-    if v.type in {XspecModelType.Add, XspecModelType.Mul, XspecModelType.Con}
-}
+_SUPPORTED_TYPES = (XspecModelType.Add, XspecModelType.Mul, XspecModelType.Con)
+_MODELS_INFO: dict[str, XspecModel] = get_models_info()
 _MODELS: dict[str, Callable] = {}
 _XLA_FFI_HANDLERS = xla_ffi_handlers()
 
@@ -47,43 +42,36 @@ def get_model(name: str) -> tuple[Callable, XspecModel]:
     return _MODELS[name_], _MODELS_INFO[name_]
 
 
-def list_models(
-    mtype: Literal['all', 'add', 'mul', 'con'] = 'all',
-) -> list[str]:
+def list_models(mtype: str | None = None) -> list[str]:
     """List XSPEC models, optionally filtered by type.
 
     Parameters
     ----------
-    mtype : {'all', 'add', 'mul', 'con'}, optional
+    mtype : str, optional
         The type of XSPEC models to list.
 
-            - ``'all'``: all XSPEC models.
             - ``'add'``: additive XSPEC models.
             - ``'mul'``: multiplicative XSPEC models.
             - ``'con'``: convolution XSPEC models.
 
-        The default is ``'all'``.
+        The default is ``None``, which means all XSPEC models.
 
     Returns
     -------
     list of str
         A list of XSPEC model names.
     """
-    if mtype == 'all':
-        return list(_MODELS_INFO.keys())
+    if mtype is None:
+        models = []
+        for t in _SUPPORTED_TYPES:
+            models.extend(list_models(t.name.lower()))
+        return models
 
-    if mtype == 'add':
-        mtype_ = XspecModelType.Add
-    elif mtype == 'mul':
-        mtype_ = XspecModelType.Mul
-    elif mtype == 'con':
-        mtype_ = XspecModelType.Con
-    else:
-        raise ValueError(f'invalid model type: {mtype}')
+    mtype_ = XspecModelType.from_str(mtype)
+    if mtype_ not in _SUPPORTED_TYPES:
+        raise NotImplementedError(f'{mtype} model is not supported yet')
 
-    return [
-        name for name, model in _MODELS_INFO.items() if model.type == mtype_
-    ]
+    return sorted(name for name, m in _MODELS_INFO.items() if m.type == mtype_)
 
 
 def _add_model_fn_to_cache(name: str) -> None:
@@ -108,7 +96,7 @@ def _add_model_fn_to_cache(name: str) -> None:
         fn = _generate_con_model_fn(name, model_info.n_params)
     else:
         mtype = model_info.type.name.lower()
-        raise ValueError(f'{mtype} model {name} is not supported yet')
+        raise NotImplementedError(f'{mtype} model {name} is not supported yet')
 
     jax.ffi.register_ffi_target(
         name,
@@ -135,9 +123,13 @@ def _check_input(n_params, params, egrid, spec_num=None, model=None):
             f'and dtype {jnp.dtype(params)}'
         )
 
-    if not (jnp.ndim(egrid) == 1 and jnp.dtype(egrid) == jnp.float64):
+    if not (
+        jnp.ndim(egrid) == 1
+        and len(egrid) >= 2
+        and jnp.dtype(egrid) == jnp.float64
+    ):
         raise ValueError(
-            'egrid must be a 1-D array of dtype float64, got '
+            'egrid must be a 1-D array of length >= 2 and dtype float64, got '
             f'shape {jnp.shape(egrid)} and dtype {jnp.dtype(egrid)}'
         )
 

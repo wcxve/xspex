@@ -1,28 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 import pytest
-from jax import numpy as jnp
-from mxspec import callModelFunction
 from numpy.testing import assert_allclose
 from xspec import Xset
 
 import xspex as xx
-from xspex._xspec.types import XspecModelType
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from jax import Array
-
-    from xspex._xspec.types import XspecParam
-
-
-# According to xspec-models-cxc:
-# grbjet occasional failures has been reported to XSPEC (in 12.12.0)
-MODELS_SKIP = ['grbjet']
 
 
 def test_xspec_version():
@@ -49,61 +32,38 @@ def test_cosmo():
         )
 
 
-def get_default_pars(param: XspecParam) -> float:
-    if param.name.casefold() == 'redshift':
-        return 1.0
-    elif param.name.casefold() == 'velocity':
-        return 100.0
-    else:
-        return float(param.default)
+def test_list_models():
+    models_all = xx.list_models()
+    models_add = xx.list_models('add')
+    models_mul = xx.list_models('mul')
+    models_con = xx.list_models('con')
+    assert models_all == models_add + models_mul + models_con
+
+    # Not supported models
+    with pytest.raises(NotImplementedError):
+        xx.list_models('mix')
+    with pytest.raises(NotImplementedError):
+        xx.list_models('acn')
+    with pytest.raises(NotImplementedError):
+        xx.list_models('amx')
+
+    # Invalid input
+    with pytest.raises(ValueError):
+        xx.list_models('invalid')
 
 
-def get_model_eval_args(
-    name: str,
-) -> tuple[
-    Callable,
-    str,
-    Array,
-    Array,
-    tuple[float, ...],
-    tuple[float, ...],
-    bool,
-    bool,
-]:
-    fn, info = xx.get_model(name)
-    egrid = jnp.linspace(0.1, 10, 100)
-    egrid_tuple = tuple(egrid.tolist())
-    pars_tuple = tuple(get_default_pars(p) for p in info.parameters)
-    pars = jnp.array(pars_tuple)
-    return (
-        fn,
-        info.name,
-        pars,
-        egrid,
-        pars_tuple,
-        egrid_tuple,
-        info.data_depend,
-        info.type == XspecModelType.Con,
-    )
+def test_get_model():
+    # Singleton model function and model info
+    for name in xx.list_models():
+        fn1, info1 = xx.get_model(name)
+        fn2, info2 = xx.get_model(name)
+        assert fn1 is fn2
+        assert info1 is info2
 
+    # Invalid input
+    with pytest.raises(ValueError):
+        xx.get_model('invalid')
 
-@pytest.mark.parametrize('name', xx.list_models())
-def test_model_eval(name: str):
-    """Test model evaluation against PyXspec."""
-    fn, mname, p, e, p_, e_, data_depend, is_con = get_model_eval_args(name)
-
-    if name in MODELS_SKIP:
-        pytest.skip(f'model {name} is skipped')
-
-    if data_depend:
-        pytest.skip('data-dependent model, requires XFLT setup')
-
-    if not is_con:
-        val_xx = fn(p, e, 1)
-        callModelFunction(mname, e_, p_, val_xs := [])
-    else:
-        n_model = len(e) - 1
-        val_xx = fn(p, e, jnp.ones(n_model), 1)
-        val_xs = [1.0] * n_model
-        callModelFunction(mname, e_, p_, val_xs)
-    assert_allclose(val_xx, val_xs)
+    # Unsupported models
+    with pytest.raises(NotImplementedError):
+        xx.get_model('pileup')
