@@ -94,7 +94,6 @@ class WorkerProcessManager
         const Task task) const noexcept
     {
         if (!worker_shmem_manager_.running()) {
-            std::cerr << "worker process exited unexpectedly" << std::endl;
             return {false, "worker process exited unexpectedly"};
         }
         worker_shmem_manager_.task(task);

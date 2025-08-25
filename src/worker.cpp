@@ -52,6 +52,10 @@ int main(const int argc, char* argv[])
     int32_t device_id = std::stoi(argv[1]);
     setup_parent_exit_guard(ppid);
 
+    // Ignore SIGINT in the worker process to prevent it from being terminated
+    // by Ctrl-C from the terminal.
+    signal(SIGINT, SIG_IGN);
+
     std::unique_ptr<xspex::worker::Worker> worker;
 
     try {
