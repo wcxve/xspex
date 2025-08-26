@@ -112,8 +112,8 @@ NB_MODULE(libxspex, m)
           &xspex::interface::clear_all_xflt,
           "Clear all XFLT entries.");
 
-    m.def("xflt_sync_to_xspec",
-          &xspex::interface::xflt_sync_to_xspec,
+    m.def("sync_xflt_to_xspec",
+          &xspex::interface::sync_xflt_to_xspec,
           "Sync XFLT entries to XSPEC in current process.");
 
     m.def("clear_xflt_xspec",

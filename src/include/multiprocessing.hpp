@@ -172,7 +172,7 @@ class WorkerProcessManager
     {
         monitor_ = std::thread([this]() {
             int status;
-            while (worker_shmem_manager_.running()) {
+            for (;;) {
                 pid_t result = waitpid(worker_pid_, &status, WNOHANG);
                 if (result != 0) {
                     std::ostringstream oss;
@@ -199,6 +199,11 @@ class WorkerProcessManager
                     worker_shmem_manager_.message(oss.str());
                     worker_shmem_manager_.notify_task_end();
                     worker_pid_ = -1;
+                    break;
+                }
+
+                if (!worker_shmem_manager_.running()) {
+                    break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
@@ -541,7 +546,7 @@ class WorkerProcessPool
     }
 
     // Sync XFLT entries to XSPEC in current process
-    void xflt_sync_to_xspec()
+    void sync_xflt_to_xspec()
     {
         std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         xspec_config_manager_.xflt.sync_from_shmem();
