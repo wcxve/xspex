@@ -30,7 +30,7 @@ class SharedMemory
                           const bool unlink_after_open)
         : shm_name_{name}, ptr_{nullptr}, size_{size}, is_owner_{create}
     {
-        int shm_fd = -1;
+        int shm_fd;
         if (create) {
             // Remove the named shared memory if it already exists
             shm_unlink(name.c_str());

@@ -390,29 +390,32 @@ def test_abund_xsect_model_consistency():
                 Xset.abund = abund
                 Xset.xsect = xsect
 
-            for nh in nh_values:
-                # Test parameters for phabs
-                params = jnp.array([nh], dtype=jnp.float64)
-                params_list = [nh]
+                for nh in nh_values:
+                    # Test parameters for phabs
+                    params = jnp.array([nh], dtype=jnp.float64)
+                    params_list = [nh]
 
-                # Get xspex result
-                val_xx = phabs_fn(params, egrid, 1)
+                    # Get xspex result
+                    val_xx = phabs_fn(params, egrid, 1)
 
-                # Get XSPEC result
-                val_xs = []
-                xspec.callModelFunction(
-                    'phabs', egrid_list, params_list, val_xs
-                )
+                    # Get XSPEC result
+                    val_xs = []
+                    xspec.callModelFunction(
+                        'phabs',
+                        egrid_list,
+                        params_list,
+                        val_xs,
+                    )
 
-                # Compare results
-                assert_allclose(
-                    val_xx,
-                    val_xs,
-                    err_msg=(
-                        f'phabs model mismatch with abund={abund}, '
-                        f'xsect={xsect}, nH={nh}'
-                    ),
-                )
+                    # Compare results
+                    assert_allclose(
+                        val_xx,
+                        val_xs,
+                        err_msg=(
+                            f'phabs model mismatch with abund={abund}, '
+                            f'xsect={xsect}, nH={nh}'
+                        ),
+                    )
 
     finally:
         # Restore original settings

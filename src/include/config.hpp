@@ -10,7 +10,6 @@
 #include <cstring>
 #include <iostream>
 #include <map>
-#include <memory>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>

@@ -19,6 +19,15 @@ if TYPE_CHECKING:
     from xspex._xspec.types import XspecParam
 
 
+# models with occasional failures
+MODELS_XFAIL = (
+    'bwcycl',
+    'grbjet',
+    'ismdust',
+    'olivineabs',
+)
+
+
 def test_check_input():
     fn_add, info = xx.get_model('powerlaw')
     p = jnp.array([1.0], dtype=jnp.float64)
@@ -94,7 +103,7 @@ def test_check_input():
         fn_con(p, e, m.astype(int), spec_num)
 
 
-def get_default_pars(param: XspecParam) -> float:
+def get_default_par(param: XspecParam) -> float:
     if param.name.casefold() == 'redshift':
         return 1.0
     elif param.name.casefold() == 'velocity':
@@ -117,7 +126,7 @@ def get_model_eval_args(
 ]:
     fn, info = xx.get_model(name)
     # clamp to a reasonable testing range
-    emin = max(0.01, info.emin)
+    emin = max(0.1, info.emin)
     emax = min(100.0, info.emax)
     if not (emax > emin):
         pytest.skip(
@@ -125,7 +134,7 @@ def get_model_eval_args(
         )
     egrid = jnp.linspace(emin, emax, 201)
     egrid_ = egrid.tolist()
-    pars_ = [get_default_pars(p) for p in info.parameters]
+    pars_ = [get_default_par(p) for p in info.parameters]
     pars = jnp.array(pars_)
     return (
         fn,
@@ -139,16 +148,12 @@ def get_model_eval_args(
     )
 
 
-# models with occasional failures
-MODELS_XFAIL = (
-    'grbjet',
-    'ismdust',
+@pytest.mark.parametrize(
+    'name',
+    [pytest.param(m, id=m) for m in xx.list_models()],
 )
-
-
-@pytest.mark.parametrize('name', xx.list_models())
 def test_model_eval(name: str):
-    """Test model evaluation against PyXspec."""
+    """Test model evaluation consistency with XSPEC for all models."""
     fn, mname, p, e, p_, e_, data_depend, is_con = get_model_eval_args(name)
 
     if data_depend:

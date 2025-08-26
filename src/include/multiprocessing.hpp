@@ -1,7 +1,6 @@
 #ifndef XSPEX_MULTIPROCESSING_HPP_
 #define XSPEX_MULTIPROCESSING_HPP_
 
-#include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -61,34 +60,9 @@ class WorkerProcessManager
     WorkerProcessManager(const WorkerProcessManager&) = delete;
     WorkerProcessManager& operator=(const WorkerProcessManager&) = delete;
 
-    // Move constructor
-    WorkerProcessManager(WorkerProcessManager&& other) noexcept
-        : device_id_{other.device_id_},
-          worker_pid_{other.worker_pid_},
-          monitor_{std::move(other.monitor_)},
-          worker_shmem_manager_{std::move(other.worker_shmem_manager_)}
-    {
-        other.worker_pid_ = -1;
-    }
-
-    // Move assignment operator
-    WorkerProcessManager& operator=(WorkerProcessManager&& other) noexcept
-    {
-        if (this != &other) {
-            // Cleanup current resources
-            worker_shmem_manager_.running(false);
-            terminate_worker_process();
-            terminate_worker_monitor();
-
-            // Move resources from other
-            device_id_ = other.device_id_;
-            worker_pid_ = other.worker_pid_;
-            monitor_ = std::move(other.monitor_);
-            worker_shmem_manager_ = std::move(other.worker_shmem_manager_);
-            other.worker_pid_ = -1;
-        }
-        return *this;
-    }
+    // Delete move constructor and move assignment operator
+    WorkerProcessManager(WorkerProcessManager&& other) = delete;
+    WorkerProcessManager& operator=(WorkerProcessManager&& other) = delete;
 
     [[nodiscard]] TaskStatus worker_execute_task(
         const Task task) const noexcept
@@ -338,8 +312,9 @@ class WorkerProcessPool
     {
         // Initialize mutex for each XLA device
         const auto n_devices = utils::xla_device_number();
-        mtx_.reserve(n_devices);
+        mtx_.reserve(n_devices + 1);
         pool_.reserve(n_devices);
+        mtx_[-1] = std::make_unique<std::mutex>();
         for (int32_t device_id = 0; device_id < n_devices; ++device_id) {
             mtx_[device_id] = std::make_unique<std::mutex>();
             pool_[device_id] = nullptr;
@@ -372,6 +347,7 @@ class WorkerProcessPool
 
     TaskStatus chatter(const int level) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.chatter.level(level);
         return xspec_config(Task::SyncChatterFromShmem);
@@ -384,6 +360,7 @@ class WorkerProcessPool
 
     TaskStatus abund(const std::string& table) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.abund.table(table);
         return xspec_config(Task::SyncAbundFromShmem);
@@ -391,6 +368,7 @@ class WorkerProcessPool
 
     TaskStatus abund_file(const std::string& file) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.abund.file(file);
         return xspec_config(Task::SyncAbundFromShmem);
@@ -403,6 +381,7 @@ class WorkerProcessPool
 
     TaskStatus xsect(const std::string& table) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.xsect.table(table);
         return xspec_config(Task::SyncXsectFromShmem);
@@ -421,6 +400,7 @@ class WorkerProcessPool
                      const float q0,
                      const float lambda0) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.cosmo.H0(h0);
         xspec_config_manager_.cosmo.q0(q0);
@@ -440,6 +420,7 @@ class WorkerProcessPool
 
     TaskStatus atomdb_version(const std::string& version) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.atomdb_version.version(version);
         return xspec_config(Task::SyncAtomDBVersionFromShmem);
@@ -452,6 +433,7 @@ class WorkerProcessPool
 
     TaskStatus spex_version(const std::string& version) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.spex_version.version(version);
         return xspec_config(Task::SyncSPEXVersionFromShmem);
@@ -464,6 +446,7 @@ class WorkerProcessPool
 
     TaskStatus nei_version(const std::string& version) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.nei_version.version(version);
         return xspec_config(Task::SyncNEIVersionFromShmem);
@@ -484,6 +467,7 @@ class WorkerProcessPool
     // Set single model string or multiple model strings
     TaskStatus mstr(const std::string& key, const std::string& value) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.mstr(key, value);
         return xspec_config(Task::SyncModelStringFromShmem);
@@ -491,6 +475,7 @@ class WorkerProcessPool
 
     TaskStatus mstr(const config::xspec::MStrMap& map) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.mstr(map);
         return xspec_config(Task::SyncModelStringFromShmem);
@@ -499,6 +484,7 @@ class WorkerProcessPool
     // Clear model string
     TaskStatus clear_mstr() noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.clear();
         return xspec_config(Task::SyncModelStringFromShmem);
@@ -521,6 +507,7 @@ class WorkerProcessPool
     TaskStatus xflt(const int spec_num,
                     const config::xspec::XFLTMap& map) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.xflt.xflt(spec_num, map);
         return xspec_config(Task::SyncXFLTFromShmem);
@@ -529,6 +516,7 @@ class WorkerProcessPool
     // Set multiple XFLT entries for multiple spectra
     TaskStatus xflt(const config::xspec::XFLTMaps& maps) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.xflt.xflt(maps);
         return xspec_config(Task::SyncXFLTFromShmem);
@@ -537,6 +525,7 @@ class WorkerProcessPool
     // Clear XFLT entries for a given spectrum number or all XFLT entries
     TaskStatus clear_xflt(const int spec_num) noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.xflt.clear(spec_num);
         return xspec_config(Task::SyncXFLTFromShmem);
@@ -545,13 +534,18 @@ class WorkerProcessPool
     // Clear all XFLT entries
     TaskStatus clear_xflt() noexcept
     {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.xflt.clear();
         return xspec_config(Task::SyncXFLTFromShmem);
     }
 
     // Sync XFLT entries to XSPEC in current process
-    void xflt_sync_to_xspec() { xspec_config_manager_.xflt.sync_from_shmem(); }
+    void xflt_sync_to_xspec()
+    {
+        std::lock_guard<std::mutex> guard(*mtx_.at(-1));
+        xspec_config_manager_.xflt.sync_from_shmem();
+    }
 
     TaskStatus evaluate_model(const int32_t device_id,
                               const uint32_t func_id,
@@ -602,7 +596,7 @@ class WorkerProcessPool
     config::xspec::XspecConfigManager xspec_config_manager_;
     std::unique_ptr<config::xspec::XspecConfig> xspec_config_backup_;
 
-    std::pair<bool, std::string> start_worker_process(
+    TaskStatus start_worker_process(
         const int32_t device_id,
         const bool sync_config_from_shmem = true) noexcept
     {
@@ -650,8 +644,7 @@ class WorkerProcessPool
         return {true, ""};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> xspec_config(
-        const Task task) const noexcept
+    [[nodiscard]] TaskStatus xspec_config(const Task task) const noexcept
     {
         bool success = true;
         std::string message;
@@ -660,6 +653,7 @@ class WorkerProcessPool
             if (worker_manager == nullptr) {
                 continue;
             }
+            std::lock_guard<std::mutex> guard(*mtx_.at(device_id));
             const auto& ret = worker_manager->worker_execute_task(task);
             if (!ret.first) {
                 success = false;
@@ -684,6 +678,11 @@ class WorkerProcessPool
 
     void restore_xspec_config() const noexcept
     {
+        if (xspec_config_backup_ == nullptr) {
+            std::cerr << "failed to restore xspec config: no backup available"
+                      << std::endl;
+            return;
+        }
         xspec_config_manager_.restore(*xspec_config_backup_);
         const auto& ret = xspec_config(Task::SyncConfigFromShmem);
         if (!ret.first) {
