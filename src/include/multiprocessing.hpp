@@ -551,7 +551,7 @@ class WorkerProcessPool
     }
 
     // Sync XFLT entries to XSPEC in current process
-    void xflt_sync_to_xspec() { xspec_config_manager_.xflt.sync_from_shmem(); }
+    void sync_xflt_to_xspec() { xspec_config_manager_.xflt.sync_from_shmem(); }
 
     TaskStatus evaluate_model(const int32_t device_id,
                               const uint32_t func_id,
