@@ -60,9 +60,34 @@ class WorkerProcessManager
     WorkerProcessManager(const WorkerProcessManager&) = delete;
     WorkerProcessManager& operator=(const WorkerProcessManager&) = delete;
 
-    // Delete move constructor and move assignment operator
-    WorkerProcessManager(WorkerProcessManager&& other) = delete;
-    WorkerProcessManager& operator=(WorkerProcessManager&& other) = delete;
+    // Move constructor
+    WorkerProcessManager(WorkerProcessManager&& other) noexcept
+        : device_id_{other.device_id_},
+          worker_pid_{other.worker_pid_},
+          monitor_{std::move(other.monitor_)},
+          worker_shmem_manager_{std::move(other.worker_shmem_manager_)}
+    {
+        other.worker_pid_ = -1;
+    }
+
+    // Move assignment operator
+    WorkerProcessManager& operator=(WorkerProcessManager&& other) noexcept
+    {
+        if (this != &other) {
+            // Cleanup current resources
+            worker_shmem_manager_.running(false);
+            terminate_worker_process();
+            terminate_worker_monitor();
+
+            // Move resources from other
+            device_id_ = other.device_id_;
+            worker_pid_ = other.worker_pid_;
+            monitor_ = std::move(other.monitor_);
+            worker_shmem_manager_ = std::move(other.worker_shmem_manager_);
+            other.worker_pid_ = -1;
+        }
+        return *this;
+    }
 
     [[nodiscard]] TaskStatus worker_execute_task(
         const Task task) const noexcept
