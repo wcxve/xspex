@@ -80,7 +80,7 @@ def get_model_eval_args(
     """Get model evaluation arguments for testing."""
     fn, info = xx.get_model(name)
     # clamp to a reasonable testing range
-    emin = max(0.1, info.emin)
+    emin = max(0.01, info.emin)
     emax = min(100.0, info.emax)
     if not (emax > emin):
         pytest.skip(
