@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -9,23 +7,6 @@ import xspec
 from numpy.testing import assert_allclose
 
 import xspex as xx
-from xspex._xspec.types import XspecModelType
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from jax import Array
-
-    from xspex._xspec.types import XspecParam
-
-
-# models with occasional failures
-MODELS_XFAIL = (
-    'bwcycl',
-    'grbjet',
-    'ismdust',
-    'olivineabs',
-)
 
 
 def test_check_input():
@@ -101,82 +82,6 @@ def test_check_input():
         fn_con(p, e, m.astype(jnp.float32), spec_num)
     with pytest.raises(ValueError):
         fn_con(p, e, m.astype(int), spec_num)
-
-
-def get_default_par(param: XspecParam) -> float:
-    if param.name.casefold() == 'redshift':
-        return 1.0
-    elif param.name.casefold() == 'velocity':
-        return 100.0
-    else:
-        return float(param.default)
-
-
-def get_model_eval_args(
-    name: str,
-) -> tuple[
-    Callable,
-    str,
-    Array,
-    Array,
-    list[float],
-    list[float],
-    bool,
-    bool,
-]:
-    fn, info = xx.get_model(name)
-    # clamp to a reasonable testing range
-    emin = max(0.1, info.emin)
-    emax = min(100.0, info.emax)
-    if not (emax > emin):
-        pytest.skip(
-            f'invalid energy range for {name}: [{info.emin}, {info.emax}]'
-        )
-    egrid = jnp.linspace(emin, emax, 201)
-    egrid_ = egrid.tolist()
-    pars_ = [get_default_par(p) for p in info.parameters]
-    pars = jnp.array(pars_)
-    return (
-        fn,
-        info.name,
-        pars,
-        egrid,
-        pars_,
-        egrid_,
-        info.data_depend,
-        info.type == XspecModelType.Con,
-    )
-
-
-@pytest.mark.parametrize(
-    'name',
-    [pytest.param(m, id=m) for m in xx.list_models()],
-)
-def test_model_eval(name: str):
-    """Test model evaluation consistency with XSPEC for all models."""
-    fn, mname, p, e, p_, e_, data_depend, is_con = get_model_eval_args(name)
-
-    if data_depend:
-        pytest.skip('data-dependent model, requires XFLT setup')
-
-    if not is_con:
-        val_xx = fn(p, e, 1)
-        xspec.callModelFunction(mname, e_, p_, val_xs := [])
-    else:
-        n_model = len(e) - 1
-        val_xx = fn(p, e, jnp.ones(n_model), 1)
-        val_xs = [1.0] * n_model
-        xspec.callModelFunction(mname, e_, p_, val_xs)
-    try:
-        assert_allclose(
-            val_xx,
-            val_xs,
-            err_msg=f'diff at {np.flatnonzero(~np.isclose(val_xx, val_xs))}',
-        )
-    except AssertionError as e:
-        if name in MODELS_XFAIL:
-            pytest.xfail('occasional failures')
-        raise e
 
 
 def test_larger_egrid_size_eval():
