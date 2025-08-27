@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose
 from xspec import Xset
 
 import xspex as xx
-from xspex._compiled.lib.libxspex import clear_xflt_xspec, xflt_sync_to_xspec
+from xspex._compiled.lib.libxspex import clear_xflt_xspec, sync_xflt_to_xspec
 
 XSPEC_ABUND_TABLES = (
     'angr',
@@ -490,7 +490,7 @@ def test_xflt_model_consistency(model, params):
     """Test XFLT settings affect model calculations with polorization model."""
     xflt = {1: {'Stokes': 0.0}, 2: {'Stokes': 1.0}, 3: {'Stokes': 2.0}}
     xx.xflt(xflt)
-    xflt_sync_to_xspec()
+    sync_xflt_to_xspec()
 
     fn, _ = xx.get_model(model)
     p = jnp.array(params, dtype=jnp.float64)
