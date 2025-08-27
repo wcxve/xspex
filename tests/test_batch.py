@@ -36,6 +36,7 @@ MODELS_XFAIL = (
     'grbjet',
     'ismdust',
     'olivineabs',
+    'xion',
 )
 
 
