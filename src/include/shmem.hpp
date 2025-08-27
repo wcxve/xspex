@@ -20,9 +20,8 @@ template <typename T>
 class SharedMemory
 {
    public:
+    // Delete default constructor
     SharedMemory() = delete;
-    SharedMemory(const SharedMemory&) = delete;
-    SharedMemory& operator=(const SharedMemory&) = delete;
 
     explicit SharedMemory(const std::string& name,
                           const size_t size,
@@ -111,31 +110,13 @@ class SharedMemory
         }
     }
 
-    SharedMemory(SharedMemory&& other) noexcept
-        : shm_name_{std::move(other.shm_name_)},
-          ptr_{other.ptr_},
-          size_{other.size_},
-          is_owner_{other.is_owner_}
-    {
-        other.ptr_ = nullptr;
-        other.size_ = 0;
-        other.is_owner_ = false;
-    }
+    // Delete copy constructor and copy assignment operator
+    SharedMemory(const SharedMemory&) = delete;
+    SharedMemory& operator=(const SharedMemory&) = delete;
 
-    SharedMemory& operator=(SharedMemory&& other) noexcept
-    {
-        if (this != &other) {
-            cleanup();
-            shm_name_ = std::move(other.shm_name_);
-            ptr_ = other.ptr_;
-            size_ = other.size_;
-            is_owner_ = other.is_owner_;
-            other.ptr_ = nullptr;
-            other.size_ = 0;
-            other.is_owner_ = false;
-        }
-        return *this;
-    }
+    // Delete move constructor and move assignment operator
+    SharedMemory(SharedMemory&& other) = delete;
+    SharedMemory& operator=(SharedMemory&& other) = delete;
 
     [[nodiscard]] std::string name() const { return shm_name_; }
 

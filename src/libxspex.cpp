@@ -10,9 +10,10 @@ using namespace nb::literals;
 
 NB_MODULE(libxspex, m)
 {
-    m.def("xla_ffi_handlers",
-          &xspex::wrapper::xla_ffi_handlers,
-          "Get XLA FFI handlers for XSPEC model functions.");
+    m.def("get_xla_ffi_handler",
+          &xspex::wrapper::get_xla_ffi_handler,
+          "name"_a,
+          "Get XLA FFI handler for XSPEC model function.");
 
     m.def("chatter",
           &xspex::interface::get_chatter,

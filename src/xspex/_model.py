@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import jax
 import jax.numpy as jnp
 
-from xspex._compiled.lib.libxspex import xla_ffi_handlers
+from xspex._compiled.lib.libxspex import get_xla_ffi_handler
 from xspex._xspec.model_parser import get_models_info
 from xspex._xspec.types import XspecModelType
 
@@ -19,7 +19,6 @@ __all__ = ['get_model', 'list_models']
 _SUPPORTED_TYPES = (XspecModelType.Add, XspecModelType.Mul, XspecModelType.Con)
 _MODELS_INFO: dict[str, XspecModel] = get_models_info()
 _MODELS: dict[str, Callable] = {}
-_XLA_FFI_HANDLERS = xla_ffi_handlers()
 
 
 def get_model(name: str) -> tuple[Callable, XspecModel]:
@@ -100,7 +99,7 @@ def _add_model_fn_to_cache(name: str) -> None:
 
     jax.ffi.register_ffi_target(
         name,
-        _XLA_FFI_HANDLERS[model_info.name],
+        get_xla_ffi_handler(model_info.name),
         platform='cpu',
     )
     fn.__name__ = name

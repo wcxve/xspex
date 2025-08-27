@@ -45,6 +45,7 @@ class Worker
                 worker_shmem_manager_.message("unknown error");
             }
         }
+        worker_shmem_manager_.notify_task_end();
     }
 
    private:

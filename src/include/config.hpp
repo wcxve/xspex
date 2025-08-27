@@ -15,7 +15,6 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <utility>
 
 // clang-format off
 #include <XSFunctions/Utilities/FunctionUtility.h>
@@ -95,9 +94,9 @@ class XspecConfigWrapperBase
     XspecConfigWrapperBase(const XspecConfigWrapperBase&) = delete;
     XspecConfigWrapperBase& operator=(const XspecConfigWrapperBase&) = delete;
 
-    // Use default move constructor and move assignment operator
-    XspecConfigWrapperBase(XspecConfigWrapperBase&&) = default;
-    XspecConfigWrapperBase& operator=(XspecConfigWrapperBase&&) = default;
+    // Delete move constructor and move assignment operator
+    XspecConfigWrapperBase(XspecConfigWrapperBase&&) = delete;
+    XspecConfigWrapperBase& operator=(XspecConfigWrapperBase&&) = delete;
 
     // Synchronize XSPEC config to shared memory
     void sync_to_shmem()
@@ -1022,28 +1021,9 @@ class XspecConfigManager
     XspecConfigManager(const XspecConfigManager&) = delete;
     XspecConfigManager& operator=(const XspecConfigManager&) = delete;
 
-    // Move constructor
-    XspecConfigManager(XspecConfigManager&& other) noexcept
-        : is_owner_{other.is_owner_}, shmem_{std::move(other.shmem_)}
-    {
-        other.is_owner_ = false;
-        update_wrappers();
-    }
-
-    // Move assignment operator
-    XspecConfigManager& operator=(XspecConfigManager&& other) noexcept
-    {
-        if (this != &other) {
-            // Move resources from other
-            is_owner_ = other.is_owner_;
-            other.is_owner_ = false;
-            shmem_ = std::move(other.shmem_);
-
-            // Update all wrappers
-            update_wrappers();
-        }
-        return *this;
-    }
+    // Delete move constructor and move assignment operator
+    XspecConfigManager(XspecConfigManager&& other) = delete;
+    XspecConfigManager& operator=(XspecConfigManager&& other) = delete;
 
     void sync_to_shmem()
     {
@@ -1162,26 +1142,9 @@ class MutexCondWrapper
     MutexCondWrapper(const MutexCondWrapper&) = delete;
     MutexCondWrapper& operator=(const MutexCondWrapper&) = delete;
 
-    // Move constructor
-    MutexCondWrapper(MutexCondWrapper&& other) noexcept
-        : shmem_{other.shmem_}, is_owner_{other.is_owner_}
-    {
-        other.is_owner_ = false;
-    }
-
-    // Move assignment operator
-    MutexCondWrapper& operator=(MutexCondWrapper&& other) noexcept
-    {
-        if (this != &other) {
-            if (is_owner_) {
-                destroy();
-            }
-            is_owner_ = other.is_owner_;
-            shmem_ = other.shmem_;
-            other.is_owner_ = false;
-        }
-        return *this;
-    }
+    // Delete move constructor and move assignment operator
+    MutexCondWrapper(MutexCondWrapper&& other) = delete;
+    MutexCondWrapper& operator=(MutexCondWrapper&& other) = delete;
 
     void wait() const
     {
@@ -1297,26 +1260,9 @@ class WorkerShmemManager
     WorkerShmemManager(const WorkerShmemManager&) = delete;
     WorkerShmemManager& operator=(const WorkerShmemManager&) = delete;
 
-    // Move constructor
-    WorkerShmemManager(WorkerShmemManager&& other) noexcept
-        : config_shmem_{std::move(other.config_shmem_)},
-          buffer_shmem_{std::move(other.buffer_shmem_)},
-          task_start_{std::move(other.task_start_)},
-          task_end_{std::move(other.task_end_)}
-    {
-    }
-
-    // Move assignment operator
-    WorkerShmemManager& operator=(WorkerShmemManager&& other) noexcept
-    {
-        if (this != &other) {
-            config_shmem_ = std::move(other.config_shmem_);
-            buffer_shmem_ = std::move(other.buffer_shmem_);
-            task_start_ = std::move(other.task_start_);
-            task_end_ = std::move(other.task_end_);
-        }
-        return *this;
-    }
+    // Delete move constructor and move assignment operator
+    WorkerShmemManager(WorkerShmemManager&& other) = delete;
+    WorkerShmemManager& operator=(WorkerShmemManager&& other) = delete;
 
     // >>> Interfaces for task management >>>
 
@@ -1454,12 +1400,13 @@ class WorkerShmemManager
         }
 
         // Round up to the next power of 2
-        auto new_buffer_shmem = shmem::SharedMemory<double>(
-            buffer_shmem_.name(),
-            utils::next_power_of_two(requested_size),
-            buffer_shmem_.is_owner(),
-            true);
-        buffer_shmem_ = std::move(new_buffer_shmem);
+        const auto size = utils::next_power_of_two(requested_size);
+        const auto name = buffer_shmem_.name();
+        const auto create = buffer_shmem_.is_owner();
+
+        buffer_shmem_.~SharedMemory();
+        new (&buffer_shmem_)
+            shmem::SharedMemory<double>(name, size, create, true);
 
         if (config_shmem_.is_owner()) {
             config_shmem_.ptr()->buf_size = buffer_shmem_.size();

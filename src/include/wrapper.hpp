@@ -47,10 +47,7 @@
                                       .Ret<ffi::AnyBuffer>()                 \
                                       .Attr<std::string_view>("init_string") \
                                       .Attr<bool>("skip_check")              \
-                                      .Ctx<ffi::DeviceOrdinal>());           \
-                                                                             \
-    nb::capsule func_name##_capsule =                                        \
-        encapsulate_ffi_handler(func_name##_handler);
+                                      .Ctx<ffi::DeviceOrdinal>());
 
 #define DEFINE_XSPEC_CON_MODEL_HANDLER(func_name, func_id, n_param)          \
     ffi::Error func_name##_wrapper(const ffi::AnyBuffer& params,             \
@@ -90,10 +87,7 @@
                                       .Ret<ffi::AnyBuffer>()                 \
                                       .Attr<std::string_view>("init_string") \
                                       .Attr<bool>("skip_check")              \
-                                      .Ctx<ffi::DeviceOrdinal>());           \
-                                                                             \
-    nb::capsule func_name##_capsule =                                        \
-        encapsulate_ffi_handler(func_name##_handler);
+                                      .Ctx<ffi::DeviceOrdinal>());
 
 namespace nb = nanobind;
 namespace ffi = xla::ffi;
@@ -181,13 +175,17 @@ XSPEC_CON_MODELS
 #undef ENTRY
 }  // namespace
 
-inline std::map<std::string, nb::capsule> xla_ffi_handlers()
+inline nb::capsule get_xla_ffi_handler(const std::string& name)
 {
-    return {
-#define ENTRY(name, n_params) {#name, name##_capsule},
+    static std::map<std::string, XLA_FFI_Handler*> handlers = {
+#define ENTRY(name, n_params) {#name, name##_handler},
         XSPEC_MODELS XSPEC_CON_MODELS
 #undef ENTRY
     };
+    if (handlers.find(name) == handlers.end()) {
+        throw std::runtime_error("XLA FFI handler not found for " + name);
+    }
+    return encapsulate_ffi_handler(handlers.at(name));
 }
 }  // namespace xspex::wrapper
 
