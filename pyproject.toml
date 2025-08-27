@@ -37,7 +37,6 @@ test = [
     "coverage[toml]>=7.8.0",
     "pytest",
     "pytest-cov",
-    "pytest-xdist",
 ]
 
 [build-system]
@@ -74,7 +73,7 @@ report.exclude_also = [
 report.show_missing = true
 
 [tool.pytest]
-ini_options.addopts = "-n 0 --cov --cov-report=xml --junitxml=junit.xml"
+ini_options.addopts = "--cov --cov-report=xml --junitxml=junit.xml"
 ini_options.testpaths = ["tests"]
 
 [tool.ruff]
