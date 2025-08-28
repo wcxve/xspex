@@ -21,6 +21,7 @@ void setup_parent_exit_guard(const pid_t ppid)
         while (kill(ppid, 0) == 0) {
             sleep(1);
         }
+        std::_Exit(0);
     }).detach();
 }
 

@@ -1,7 +1,6 @@
 #ifndef XSPEX_MULTIPROCESSING_HPP_
 #define XSPEX_MULTIPROCESSING_HPP_
 
-#include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>

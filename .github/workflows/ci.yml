@@ -105,7 +105,7 @@ jobs:
             os: "macos-latest"
             python-version: "3.13"
             uv-resolution: "highest"
-            parallel_cpu: "1"
+            parallel_cpu: "2"
 
           - name: Tests (Lowest Version Deps)
             os: "ubuntu-latest"
