@@ -12,33 +12,16 @@
 #include <string>
 #include <thread>
 
-// For Linux, use prctl to set the parent process death signal
-#if defined(__linux__)
-#include <sys/prctl.h>
-
-#include <cstdio>
-#endif
-
 void setup_parent_exit_guard(const pid_t ppid)
 {
     if (kill(ppid, 0) != 0) {
         std::_Exit(0);
     }
-#if defined(__linux__)
-    // Exit when parent process exits
-    if (prctl(PR_SET_PDEATHSIG, SIGTERM) == -1) {
-        perror("prctl(PR_SET_PDEATHSIG) failed");
-        std::_Exit(1);
-    }
-#else
-    // Start a watchdog thread to monitor the parent process
     std::thread([ppid]() {
         while (kill(ppid, 0) == 0) {
             sleep(1);
         }
-        std::_Exit(0);
     }).detach();
-#endif
 }
 
 int main(const int argc, char* argv[])

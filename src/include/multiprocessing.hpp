@@ -219,12 +219,6 @@ class WorkerProcessManager
                                  std::to_string(worker_pid) + ")";
 
         try {
-            // Send SIGTERM to the worker process
-            if (kill(worker_pid, SIGTERM) != 0) {
-                std::cerr << "failed to send SIGTERM to " << process_str
-                          << ": " << strerror(errno) << std::endl;
-            }
-
             // Wait for the worker process to exit with timeout
             int status;
             constexpr auto timeout = std::chrono::seconds(5);
@@ -562,7 +556,7 @@ class WorkerProcessPool
     }
 
    private:
-    std::unordered_map<int32_t, std::unique_ptr<std::mutex>> mtx_;
+    mutable std::unordered_map<int32_t, std::unique_ptr<std::mutex>> mtx_;
     std::unordered_map<int32_t, std::unique_ptr<WorkerProcessManager>> pool_;
     config::xspec::XspecConfigManager xspec_config_manager_;
     std::unique_ptr<config::xspec::XspecConfig> xspec_config_backup_;
