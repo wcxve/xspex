@@ -1,35 +1,29 @@
 [project]
 name = "xspex"
-description = "Access Xspec models and corresponding JAX/XLA ops."
+version = "0.1.0"
+description = "JAX interface for XSPEC spectral models."
 readme = "README.md"
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.10,<3.14"
 license = "GPL-3.0-or-later"
 authors = [
-    {name = "Wang-Chen Xue", email = "wcxuemail@gmail.com"},
+    { name = "Wang-Chen Xue", email = "wcxuemail@gmail.com" },
 ]
 classifiers = [
+    "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX",
-    "Programming Language :: C",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Astronomy",
 ]
 dependencies = [
-    "numpy>=1.23.3",
-    "jax>=0.4.16,<=0.6.0",
-    "jaxlib>=0.4.16,<=0.6.0",
-]
-dynamic = ["version"]
-
-[project.optional-dependencies]
-test = [
-    "coverage[toml]>=7.8.0",
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
+    "beautifulsoup4==4.13.4",
+    "jax>=0.6.0,<=0.7.1",
 ]
 
 [project.urls]
@@ -37,44 +31,31 @@ Documentation = "https://github.com/wcxve/xspex#readme"
 Issues = "https://github.com/wcxve/xspex/issues"
 Source = "https://github.com/wcxve/xspex"
 
+[project.optional-dependencies]
+test = [
+    "chex",
+    "coverage[toml]>=7.8.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
+
 [build-system]
 requires = [
-    "setuptools>=64.0.0",
-    "wheel",
-    "pybind11>=2.10.0",
-    "parse-xspec==0.1.0",
+    "jax>=0.6.0,<=0.7.1",
+    "nanobind>=1.3.2",
+    "scikit-build-core>=0.4.3",
 ]
-build-backend = "setuptools.build_meta"
-
-[tool.ruff]
-line-length = 79
-target-version = "py310"
-format.quote-style = "single"
-lint.extend-select = ["Q"]
-lint.flake8-quotes.inline-quotes = "single"
-lint.ignore = [
-    "B028",  # allow warnings without stacklevel
-    "C901",  # allow functions with a high complexity
-    "E731",  # allow lambda functions
-]
-lint.isort.known-first-party = ["src"]
-lint.isort.combine-as-imports = true
-lint.select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
-    "UP",  # pyupgrade
-]
-
-[tool.pytest]
-ini_options.addopts = "-n auto --cov --cov-report=xml --junitxml=junit.xml"
-ini_options.testpaths = ["tests"]
+build-backend = "scikit_build_core.build"
 
 [tool.coverage]
-run.source_dirs = ["src/xspex"]
+run.concurrency = [
+    "thread",
+    "multiprocessing",
+]
+run.parallel = true
+run.sigterm = true
+run.source_pkgs = ["xspex"]
 report.exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
@@ -91,3 +72,48 @@ report.exclude_also = [
     '@(abc\.)?abstractmethod',
 ]
 report.show_missing = true
+
+[tool.pytest]
+ini_options.addopts = "-v -n 4 --cov --cov-report=xml --junitxml=junit.xml"
+ini_options.testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+format.quote-style = "single"
+lint.extend-select = ["Q"]
+lint.flake8-quotes.inline-quotes = "single"
+lint.ignore = [
+    "B028", # allow warnings without stacklevel
+    "C901", # allow functions with a high complexity
+    "E731", # allow lambda functions
+]
+lint.isort.known-first-party = ["xspex"]
+lint.isort.combine-as-imports = true
+lint.select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+    "UP", # pyupgrade
+]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+sdist.include = [
+    "src",
+    "CMakeLists.txt",
+    "LICENSE",
+    "pyproject.toml",
+    "README.md",
+]
+sdist.exclude = [
+    ".github",
+    ".clangd",
+    ".clang-format",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    "tests",
+]
