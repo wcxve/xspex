@@ -175,27 +175,24 @@ inline void check_input(const std::string& model_name,
 
     std::ostringstream oss;
 
-    if (dim_p.size() > 1) {
-        oss << "batching over parameters " << utils::shape_string_of(params)
-            << " is not supported yet";
+    if (dim_p.size() != 1) {
+        oss << "params must be 1-D array, got " << shape_string_of(params);
         throw std::runtime_error(oss.str());
     }
 
-    if (dim_e.size() > 1) {
-        oss << "batching over egrid " << utils::shape_string_of(egrid)
-            << " is not supported yet";
+    if (dim_e.size() != 1) {
+        oss << "egrid must be 1-D array, got " << shape_string_of(egrid);
         throw std::runtime_error(oss.str());
     }
 
-    if (dim_sn.size() >= 1) {
-        oss << "batching over spectrum number "
-            << utils::shape_string_of(spec_num) << " is not supported yet";
+    if (dim_sn.size() != 0) {
+        oss << "spec_num must be scalar, got " << shape_string_of(spec_num);
         throw std::runtime_error(oss.str());
     }
 
-    if (dim_m.size() > 1) {
-        oss << "batching over model output " << utils::shape_string_of(*model)
-            << " is not supported yet";
+    if (dim_m.size() != 1) {
+        oss << "model output container must be 1-D array, got "
+            << shape_string_of(*model);
         throw std::runtime_error(oss.str());
     }
 
@@ -214,7 +211,7 @@ inline void check_input(const std::string& model_name,
 
     if (n_m != n_e - 1) {
         oss << model_name << " model got inconsistent size of egrid (" << n_e
-            << ") and model output (" << n_m << ")";
+            << ") and model output container (" << n_m << ")";
         throw std::runtime_error(oss.str());
     }
 }
