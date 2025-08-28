@@ -18,10 +18,10 @@
 #include "utils.hpp"
 
 #define DEFINE_XSPEC_MODEL_HANDLER(func_name, func_id, n_param)              \
-    ffi::Error func_name##_wrapper(const ffi::AnyBuffer& params,             \
-                                   const ffi::AnyBuffer& egrid,              \
-                                   const ffi::AnyBuffer& spec_num,           \
-                                   ffi::Result<ffi::AnyBuffer> model,        \
+    ffi::Error func_name##_wrapper(const ffi::Buffer<ffi::F64>& params,      \
+                                   const ffi::Buffer<ffi::F64>& egrid,       \
+                                   const ffi::Buffer<ffi::S64>& spec_num,    \
+                                   ffi::Result<ffi::Buffer<ffi::F64>> model, \
                                    const std::string_view& init_string,      \
                                    const bool skip_check,                    \
                                    const int32_t device_ordinal)             \
@@ -41,20 +41,20 @@
     XLA_FFI_DEFINE_HANDLER_SYMBOL(func_name##_handler,                       \
                                   func_name##_wrapper,                       \
                                   ffi::Ffi::Bind()                           \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Ret<ffi::AnyBuffer>()                 \
+                                      .Arg<ffi::Buffer<ffi::F64>>()          \
+                                      .Arg<ffi::Buffer<ffi::F64>>()          \
+                                      .Arg<ffi::Buffer<ffi::S64>>()          \
+                                      .Ret<ffi::Buffer<ffi::F64>>()          \
                                       .Attr<std::string_view>("init_string") \
                                       .Attr<bool>("skip_check")              \
                                       .Ctx<ffi::DeviceOrdinal>());
 
 #define DEFINE_XSPEC_CON_MODEL_HANDLER(func_name, func_id, n_param)          \
-    ffi::Error func_name##_wrapper(const ffi::AnyBuffer& params,             \
-                                   const ffi::AnyBuffer& egrid,              \
-                                   const ffi::AnyBuffer& input_model,        \
-                                   const ffi::AnyBuffer& spec_num,           \
-                                   ffi::Result<ffi::AnyBuffer> model,        \
+    ffi::Error func_name##_wrapper(const ffi::Buffer<ffi::F64>& params,      \
+                                   const ffi::Buffer<ffi::F64>& egrid,       \
+                                   const ffi::Buffer<ffi::F64>& input_model, \
+                                   const ffi::Buffer<ffi::S64>& spec_num,    \
+                                   ffi::Result<ffi::Buffer<ffi::F64>> model, \
                                    const std::string_view& init_string,      \
                                    const bool skip_check,                    \
                                    const int32_t device_ordinal)             \
@@ -80,11 +80,11 @@
     XLA_FFI_DEFINE_HANDLER_SYMBOL(func_name##_handler,                       \
                                   func_name##_wrapper,                       \
                                   ffi::Ffi::Bind()                           \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Arg<ffi::AnyBuffer>()                 \
-                                      .Ret<ffi::AnyBuffer>()                 \
+                                      .Arg<ffi::Buffer<ffi::F64>>()          \
+                                      .Arg<ffi::Buffer<ffi::F64>>()          \
+                                      .Arg<ffi::Buffer<ffi::F64>>()          \
+                                      .Arg<ffi::Buffer<ffi::S64>>()          \
+                                      .Ret<ffi::Buffer<ffi::F64>>()          \
                                       .Attr<std::string_view>("init_string") \
                                       .Attr<bool>("skip_check")              \
                                       .Ctx<ffi::DeviceOrdinal>());
@@ -96,21 +96,21 @@ namespace xspex::wrapper
 {
 inline ffi::Error model_wrapper(const int32_t device_id,
                                 const uint32_t func_id,
-                                const ffi::AnyBuffer& params,
-                                const ffi::AnyBuffer& egrid,
-                                const ffi::AnyBuffer& spec_num,
-                                ffi::Result<ffi::AnyBuffer>& model,
+                                const ffi::Buffer<ffi::F64>& params,
+                                const ffi::Buffer<ffi::F64>& egrid,
+                                const ffi::Buffer<ffi::S64>& spec_num,
+                                ffi::Result<ffi::Buffer<ffi::F64>>& model,
                                 const std::string_view& init_string)
 {
     const auto& status =
         interface::evaluate_model(device_id,
                                   func_id,
-                                  params.typed_data<double>(),
+                                  params.typed_data(),
                                   params.dimensions().back(),
-                                  egrid.typed_data<double>(),
+                                  egrid.typed_data(),
                                   model->dimensions().back(),
-                                  model->typed_data<double>(),
-                                  spec_num.typed_data<int>()[0],
+                                  model->typed_data(),
+                                  static_cast<int>(spec_num.typed_data()[0]),
                                   init_string.data());
     if (!status.first) {
         return {ffi::ErrorCode::kInternal, status.second};
@@ -120,24 +120,24 @@ inline ffi::Error model_wrapper(const int32_t device_id,
 
 inline ffi::Error con_model_wrapper(const int32_t device_id,
                                     const uint32_t func_id,
-                                    const ffi::AnyBuffer& params,
-                                    const ffi::AnyBuffer& egrid,
-                                    const ffi::AnyBuffer& input_model,
-                                    const ffi::AnyBuffer& spec_num,
-                                    ffi::Result<ffi::AnyBuffer>& model,
+                                    const ffi::Buffer<ffi::F64>& params,
+                                    const ffi::Buffer<ffi::F64>& egrid,
+                                    const ffi::Buffer<ffi::F64>& input_model,
+                                    const ffi::Buffer<ffi::S64>& spec_num,
+                                    ffi::Result<ffi::Buffer<ffi::F64>>& model,
                                     const std::string_view& init_string)
 {
     const auto& status =
         interface::evaluate_model(device_id,
                                   func_id,
-                                  params.typed_data<double>(),
+                                  params.typed_data(),
                                   params.dimensions().back(),
-                                  egrid.typed_data<double>(),
+                                  egrid.typed_data(),
                                   model->dimensions().back(),
-                                  model->typed_data<double>(),
-                                  spec_num.typed_data<int>()[0],
+                                  model->typed_data(),
+                                  static_cast<int>(spec_num.typed_data()[0]),
                                   init_string.data(),
-                                  input_model.typed_data<double>());
+                                  input_model.typed_data());
     if (!status.first) {
         return {ffi::ErrorCode::kInternal, status.second};
     }

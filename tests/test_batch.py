@@ -13,6 +13,8 @@ from numpy.testing import assert_allclose
 import xspex as xx
 from xspex._xspec.types import XspecModelType
 
+from .conftest import MODELS_XFAIL
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -29,15 +31,6 @@ SHARDING = NamedSharding(
     P('devices', 'batch'),
 )
 REL_DELTA = 0.2
-
-# models with occasional failures
-MODELS_XFAIL = (
-    'bwcycl',
-    'grbjet',
-    'ismdust',
-    'olivineabs',
-    'xion',
-)
 
 
 def get_pars(

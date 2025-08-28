@@ -139,7 +139,8 @@ inline uint32_t next_power_of_two(uint32_t n) noexcept
     return n + 1;
 }
 
-inline std::string shape_string_of(const ffi::AnyBuffer& buffer) noexcept
+template <typename T>
+inline std::string shape_string_of(const T& buffer) noexcept
 {
     std::ostringstream ss;
     ss << "(";
@@ -159,10 +160,10 @@ inline std::string shape_string_of(const ffi::AnyBuffer& buffer) noexcept
 
 inline void check_input(const std::string& model_name,
                         const uint32_t n_params,
-                        const ffi::AnyBuffer& params,
-                        const ffi::AnyBuffer& egrid,
-                        const ffi::AnyBuffer& spec_num,
-                        ffi::Result<ffi::AnyBuffer>& model)
+                        const ffi::Buffer<ffi::F64>& params,
+                        const ffi::Buffer<ffi::F64>& egrid,
+                        const ffi::Buffer<ffi::S64>& spec_num,
+                        ffi::Result<ffi::Buffer<ffi::F64>>& model)
 {
     const auto& dim_p = params.dimensions();
     const auto& dim_e = egrid.dimensions();
@@ -220,11 +221,11 @@ inline void check_input(const std::string& model_name,
 
 inline void check_input(const std::string& model_name,
                         const uint32_t n_params,
-                        const ffi::AnyBuffer& params,
-                        const ffi::AnyBuffer& egrid,
-                        const ffi::AnyBuffer& spec_num,
-                        ffi::Result<ffi::AnyBuffer>& model,
-                        const ffi::AnyBuffer& input_model)
+                        const ffi::Buffer<ffi::F64>& params,
+                        const ffi::Buffer<ffi::F64>& egrid,
+                        const ffi::Buffer<ffi::S64>& spec_num,
+                        ffi::Result<ffi::Buffer<ffi::F64>>& model,
+                        const ffi::Buffer<ffi::F64>& input_model)
 {
     check_input(model_name, n_params, params, egrid, spec_num, model);
     const auto& dim_e = egrid.dimensions();

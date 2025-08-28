@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include <future>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -173,21 +172,22 @@ class WorkerProcessManager
     void start_worker_monitor()
     {
         monitor_ = std::thread([this]() {
+            const pid_t pid = worker_pid_;
             int status;
             while (worker_shmem_manager_.running()) {
-                pid_t result = waitpid(worker_pid_, &status, WNOHANG);
+                pid_t result = waitpid(pid, &status, WNOHANG);
                 if (result != 0) {
                     std::ostringstream oss;
                     oss << "worker process (device " << device_id_ << ", pid "
-                        << worker_pid_ << ")";
+                        << pid << ") ";
 
                     if (result == worker_pid_) {  // Child process has exited
                         if (WIFEXITED(status)) {
-                            oss << " exited with code " << WEXITSTATUS(status);
+                            oss << "exited with code " << WEXITSTATUS(status);
                         } else if (WIFSIGNALED(status)) {
-                            oss << " killed by signal " << WTERMSIG(status);
+                            oss << "killed by signal " << WTERMSIG(status);
                         } else {
-                            oss << " exited abnormally (status=" << status
+                            oss << "exited abnormally (status=" << status
                                 << ")";
                         }
                     } else if (result == -1) {

@@ -74,7 +74,7 @@ report.exclude_also = [
 report.show_missing = true
 
 [tool.pytest]
-ini_options.addopts = "-n auto --cov --cov-report=xml --junitxml=junit.xml"
+ini_options.addopts = "-v -n 2 --cov --cov-report=xml --junitxml=junit.xml"
 ini_options.testpaths = ["tests"]
 
 [tool.ruff]
