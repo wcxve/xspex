@@ -17,13 +17,13 @@ def test_fd_method():
     e = jnp.linspace(0.1, 1.0, 10)
 
     # Test forward method
-    xx.define_fdjvp(fn, model_info, method='forward')
+    fn = xx.define_fdjvp(fn, model_info, method='forward')
     jacfwd_f = jax.jacfwd(fn)(p, e)
     jacrev_f = jax.jacrev(fn)(p, e)
     assert_allclose(jacfwd_f, jacrev_f)
 
     # Test central method
-    xx.define_fdjvp(fn, model_info, method='central')
+    fn = xx.define_fdjvp(fn, model_info, method='central')
     jacfwd_c = jax.jacfwd(fn)(p, e)
     jacrev_c = jax.jacrev(fn)(p, e)
     assert_allclose(jacfwd_c, jacrev_c)
