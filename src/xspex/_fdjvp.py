@@ -162,9 +162,10 @@ def define_fdjvp(
             return primal_out, tangent_out
 
         if use_rel_step:
-            params_free = params.at[idx].get(**JNP_AT_KWS)
-            perturb = deltas[idx] * jnp.abs(params_free)
-            perturb = jnp.where(perturb != 0.0, perturb, deltas_default[idx])
+            p_free = params.at[idx].get(**JNP_AT_KWS)
+            p_abs = jnp.abs(p_free)
+            p_scale = jnp.where(p_abs != 0.0, p_abs, deltas_default[idx])
+            perturb = deltas[idx] * p_scale
         else:
             perturb = deltas[idx]
 

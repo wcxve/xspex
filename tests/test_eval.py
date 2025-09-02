@@ -65,7 +65,15 @@ def test_check_input():
     with pytest.raises(ValueError):
         fn_add(p, e, spec_num.astype(float))
 
-    fn_con, info = xx.get_model('cflux')
+    # Test spec_num can be either int or jnp.array
+    fn_add(p, e, 1)
+    fn_add(p, e, spec_num)
+
+    # Test init_string check
+    with pytest.raises(ValueError):
+        fn_add(p, e, init_string=1)
+
+    fn_con, _ = xx.get_model('cflux')
     p = jnp.array([1.0, 2.0, 1.0], dtype=jnp.float64)
     e = jnp.array([1.0, 2.0], dtype=jnp.float64)
     m = jnp.array([1.0], dtype=jnp.float64)
