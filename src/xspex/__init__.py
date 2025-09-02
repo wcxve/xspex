@@ -10,6 +10,7 @@ from xspex._compiled.lib.libxspex import (
     xsect as xsect,
     xspec_version as xspec_version,
 )
+from xspex._fdjvp import define_fdjvp as define_fdjvp
 from xspex._model import (
     get_model as get_model,
     list_models as list_models,

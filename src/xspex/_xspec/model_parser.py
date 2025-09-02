@@ -285,7 +285,7 @@ def get_models_info(
 
         mtype = XspecModelType.from_str(match.group('mtype'))
         mname = match.group('mname')
-        func, func_type = XspecFuncType.get_func_and_type(match.group('func'))
+        func, func_type, eps = XspecFuncType.get_func_meta(match.group('func'))
         n_params = int(match.group('npars'))
         emin = float(match.group('emin'))
         emax = float(match.group('emax'))
@@ -322,6 +322,7 @@ def get_models_info(
             name=mname,
             func=func,
             func_type=func_type,
+            eps=eps,
             desc=desc_and_link.get('desc', ''),
             link=desc_and_link.get('link', ''),
             emin=emin,

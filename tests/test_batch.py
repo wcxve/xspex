@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 N_DEVICES = len(jax.devices())
 N_BATCHES = 2
 SHARDING = NamedSharding(
-    jax.make_mesh((N_DEVICES, 1), ('devices', 'batch')),
-    P('devices', 'batch'),
+    jax.make_mesh((N_DEVICES, 1), ('device', 'batch')),
+    P('device', 'batch'),
 )
 REL_DELTA = 0.2
 
@@ -60,7 +60,7 @@ def get_pars(
 
 
 def get_model_eval_args(
-    name: str,
+    model_name: str,
     seed: int,
 ) -> tuple[
     Callable,
@@ -72,18 +72,19 @@ def get_model_eval_args(
     bool,
 ]:
     """Get model evaluation arguments for testing."""
-    fn, info = xx.get_model(name)
+    fn, model_info = xx.get_model(model_name)
     # clamp to a reasonable testing range
-    emin = max(0.01, info.emin)
-    emax = min(100.0, info.emax)
+    emin = max(0.01, model_info.emin)
+    emax = min(100.0, model_info.emax)
     if not (emax > emin):
         pytest.skip(
-            f'invalid energy range for {name}: [{info.emin}, {info.emax}]'
+            f'{model_name} model has invalid energy range: '
+            f'[{model_info.emin}, {model_info.emax}]'
         )
     egrid = jnp.linspace(emin, emax, 101)
     egrid_ = egrid.tolist()
     rng = np.random.default_rng(seed)
-    pars = np.array([get_pars(p, rng) for p in info.parameters])
+    pars = np.array([get_pars(p, rng) for p in model_info.parameters])
     pars = np.moveaxis(pars, 0, -1)
 
     # Handle models with no parameters
@@ -91,29 +92,31 @@ def get_model_eval_args(
         pars = np.tile(np.empty((0,)), (N_DEVICES, N_BATCHES, 0))
 
     # some models have paramters need to be constrained
-    if name == 'xion':
+    if model_name == 'xion':
         # outer radius > inner radius > height of source
         pars[..., 4] += pars[..., 0]
         pars[..., 5] += pars[..., 4]
 
     return (
         fn,
-        info.name,
+        model_info.name,
         jnp.array(pars),
         egrid,
         egrid_,
-        info.data_depend,
-        info.type == XspecModelType.Con,
+        model_info.data_depend,
+        model_info.type == XspecModelType.Con,
     )
 
 
 @pytest.mark.parametrize(
-    'name, seed',
+    'model_name, seed',
     [pytest.param(m, i, id=m) for i, m in enumerate(xx.list_models())],
 )
-def test_vmap(name: str, seed: int):
+def test_vmap(model_name: str, seed: int):
     """Test jax.vmap consistency with XSPEC for all models."""
-    fn, mname, p, e, e_, data_depend, is_con = get_model_eval_args(name, seed)
+    fn, mname, p, e, e_, data_depend, is_con = get_model_eval_args(
+        model_name, seed
+    )
 
     if data_depend:
         pytest.skip('data-dependent model, requires XFLT setup')
@@ -124,9 +127,9 @@ def test_vmap(name: str, seed: int):
         if not is_con:
             # Test additive/multiplicative models
             # Vectorize over parameter dimension
-            vmap_fn = jax.vmap(fn, in_axes=(0, None, None))
-            vmap2_fn = jax.vmap(vmap_fn, in_axes=(0, None, None))
-            val_xx_batch = jax.jit(vmap2_fn)(params_batch, e, 1)
+            vmap_fn = jax.vmap(fn, in_axes=(0, None))
+            vmap2_fn = jax.vmap(vmap_fn, in_axes=(0, None))
+            val_xx_batch = jax.jit(vmap2_fn)(params_batch, e)
 
             # Compare with individual XSPEC calls
             for i in range(N_DEVICES):
@@ -152,9 +155,9 @@ def test_vmap(name: str, seed: int):
             input_model = jnp.ones(n_model)
 
             # Vectorize over parameter dimension
-            vmap_fn = jax.vmap(fn, in_axes=(0, None, None, None))
-            vmap2_fn = jax.vmap(vmap_fn, in_axes=(0, None, None, None))
-            val_xx_batch = jax.jit(vmap2_fn)(params_batch, e, input_model, 1)
+            vmap_fn = jax.vmap(fn, in_axes=(0, None, None))
+            vmap2_fn = jax.vmap(vmap_fn, in_axes=(0, None, None))
+            val_xx_batch = jax.jit(vmap2_fn)(params_batch, e, input_model)
 
             # Compare with individual XSPEC calls
             for i in range(N_DEVICES):
@@ -176,18 +179,20 @@ def test_vmap(name: str, seed: int):
                     )
 
     except AssertionError as e:
-        if name in MODELS_XFAIL:
+        if model_name in MODELS_XFAIL:
             pytest.xfail('occasional failures')
         raise e
 
 
 @pytest.mark.parametrize(
-    'name, seed',
+    'model_name, seed',
     [pytest.param(m, i, id=m) for i, m in enumerate(xx.list_models())],
 )
-def test_pmap(name: str, seed: int):
+def test_pmap(model_name: str, seed: int):
     """Test jax.pmap consistency with XSPEC for all models."""
-    fn, mname, p, e, e_, data_depend, is_con = get_model_eval_args(name, seed)
+    fn, mname, p, e, e_, data_depend, is_con = get_model_eval_args(
+        model_name, seed
+    )
 
     if data_depend:
         pytest.skip('data-dependent model, requires XFLT setup')
@@ -196,9 +201,9 @@ def test_pmap(name: str, seed: int):
         if not is_con:
             # Test additive/multiplicative models
             # Parallelize over parameter sets
-            vmap_fn = jax.vmap(fn, in_axes=(0, None, None))
-            pmap_fn = jax.pmap(vmap_fn, in_axes=(0, None, None))
-            val_xx = pmap_fn(p, e, 1)
+            vmap_fn = jax.vmap(fn, in_axes=(0, None))
+            pmap_fn = jax.pmap(vmap_fn, in_axes=(0, None))
+            val_xx = pmap_fn(p, e)
 
             # Compare with individual XSPEC calls
             for i in range(N_DEVICES):
@@ -224,9 +229,9 @@ def test_pmap(name: str, seed: int):
             input_model = jnp.ones(n_model)
 
             # Parallelize over parameter sets
-            vmap_fn = jax.vmap(fn, in_axes=(0, None, None, None))
-            pmap_fn = jax.pmap(vmap_fn, in_axes=(0, None, None, None))
-            val_xx = pmap_fn(p, e, input_model, 1)
+            vmap_fn = jax.vmap(fn, in_axes=(0, None, None))
+            pmap_fn = jax.pmap(vmap_fn, in_axes=(0, None, None))
+            val_xx = pmap_fn(p, e, input_model)
 
             # Compare with individual XSPEC calls
             for i in range(N_DEVICES):
@@ -248,6 +253,6 @@ def test_pmap(name: str, seed: int):
                     )
 
     except AssertionError as e:
-        if name in MODELS_XFAIL:
+        if model_name in MODELS_XFAIL:
             pytest.xfail('occasional failures')
         raise e

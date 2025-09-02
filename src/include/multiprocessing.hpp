@@ -173,14 +173,13 @@ class WorkerProcessManager
         monitor_ = std::thread([this]() {
             const pid_t pid = worker_pid_;
             int status;
-            while (worker_shmem_manager_.running()) {
+            while (true) {
                 pid_t result = waitpid(pid, &status, WNOHANG);
                 if (result != 0) {
                     std::ostringstream oss;
                     oss << "worker process (device " << device_id_ << ", pid "
                         << pid << ") ";
-
-                    if (result == worker_pid_) {  // Child process has exited
+                    if (result == pid) {  // Child process has exited
                         if (WIFEXITED(status)) {
                             oss << "exited with code " << WEXITSTATUS(status);
                         } else if (WIFSIGNALED(status)) {
@@ -200,6 +199,10 @@ class WorkerProcessManager
                     worker_shmem_manager_.message(oss.str());
                     worker_shmem_manager_.notify_task_end();
                     worker_pid_ = -1;
+                    break;
+                }
+                if (!worker_shmem_manager_.running()) {
+                    break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }

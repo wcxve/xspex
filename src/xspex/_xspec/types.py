@@ -13,6 +13,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
+import numpy as np
+
+EPS_F32 = float(np.finfo(np.float32).eps)
+EPS_F64 = float(np.finfo(np.float64).eps)
+
 
 class XspecFuncType(Enum):
     """XSPEC model function types, see [1]_ for details.
@@ -35,17 +40,17 @@ class XspecFuncType(Enum):
     """Fortran function in double precision."""
 
     @classmethod
-    def get_func_and_type(cls, name: str) -> tuple[str, XspecFuncType]:
-        """Get function and type given the name in model.dat file."""
+    def get_func_meta(cls, name: str) -> tuple[str, XspecFuncType, float]:
+        """Get function name, type, and numerical precision of output."""
         match name[:2]:
             case 'C_':
-                return name[2:], cls.CXX
+                return name[2:], cls.CXX, EPS_F64
             case 'c_':
-                return name[2:], cls.C
+                return name[2:], cls.C, EPS_F64
             case 'F_':
-                return f'{name[2:]}_', cls.F
+                return f'{name[2:]}_', cls.F, EPS_F64
             case _:
-                return f'{name}_', cls.f
+                return f'{name}_', cls.f, EPS_F32
 
 
 class XspecModelType(Enum):
@@ -196,6 +201,9 @@ class XspecModel:
 
     func_type: XspecFuncType
     """Model function type."""
+
+    eps: float
+    """Numerical precision of model function output."""
 
     desc: str
     """Model description."""
