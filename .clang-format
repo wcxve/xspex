@@ -1,0 +1,15 @@
+BasedOnStyle: Google
+Language: Cpp
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+AlignTrailingComments:
+  Kind: Always
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 79
+BinPackArguments: false
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+ExperimentalAutoDetectBinPacking: true
+BreakBeforeBraces: Linux
