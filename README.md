@@ -1,17 +1,21 @@
 # xspex
 
+**JAX Interface for XSPEC Spectral Models.**
+
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/xspex?color=blue&logo=Python&logoColor=white&style=for-the-badge)](https://pypi.org/project/xspex)
 [![PyPI - Version](https://img.shields.io/pypi/v/xspex?color=blue&logo=PyPI&logoColor=white&style=for-the-badge)](https://pypi.org/project/xspex)
 [![License: GPL v3](https://img.shields.io/github/license/wcxve/xspex?color=blue&logo=open-source-initiative&logoColor=white&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)<br>
 [![Coverage Status](https://img.shields.io/codecov/c/github/wcxve/xspex?logo=Codecov&logoColor=white&style=for-the-badge)](https://app.codecov.io/github/wcxve/xspex)
 
-JAX interface for XSPEC spectral models.
-
 ## Installation
 
-Note: ``HEASoft`` & ``XSPEC v12.12.1+`` are required to be installed on your
-system.
-You can download it from [here](https://heasarc.gsfc.nasa.gov/lheasoft/).
+NOTE: Before installation, ``HEASoft`` & ``XSPEC v12.12.1+`` are
+required to be installed on your system. You can download
+from [here](https://heasarc.gsfc.nasa.gov/lheasoft/),
+or install
+from [conda](https://heasarc.gsfc.nasa.gov/docs/software/conda.html).
+
+After initializing ``HEADAS`` environment, you can install ``xspex`` with:
 
 ```shell
 pip install xspex
@@ -23,6 +27,7 @@ pip install xspex
 
 ```python
 import os
+
 os.environ['XLA_FLAGS'] = '--xla_force_host_platform_device_count=2'
 
 import jax
@@ -49,7 +54,9 @@ print(value)
 
 ### JAX Transformations
 
-``xspex`` provides JAX automatic differentiation support for XSPEC models through finite difference approximation. This allows seamless integration with JAX's transformations like ``grad``, ``jacfwd``, ``jacrev``, etc.
+``xspex`` provides JAX automatic differentiation support for XSPEC models
+through finite difference approximation. This allows seamless integration with
+JAX's transformations like ``grad``, ``jacfwd``, ``jacrev``, etc.
 
 #### Computing Gradients
 
@@ -126,8 +133,8 @@ fn, info = xx.get_model('powerlaw')
 fn2 = xx.define_fdjvp(  # see the docstring for more details
     fn,
     info,
-    delta=1e-6,           # Custom step size (relative to parameter value)
-    method='central',     # 'central' or 'forward' finite differences
-    fixed=None            # Optional: specify which parameters to keep fixed
+    delta=1e-6,  # Custom step size (relative to parameter value)
+    method='central',  # 'central' or 'forward' finite differences
+    fixed=None  # Optional: specify which parameters to keep fixed
 )
 ```
