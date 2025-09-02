@@ -118,7 +118,7 @@ target_compile_definitions(includes INTERFACE
 # Install the worker binary
 add_executable(worker ${CMAKE_CURRENT_SOURCE_DIR}/src/worker.cpp)
 target_link_libraries(worker PRIVATE includes ${LINK_LIBS})
-# set_target_properties(worker PROPERTIES INSTALL_RPATH ${HEADAS_LIB_DIR})
+set_target_properties(worker PROPERTIES INSTALL_RPATH ${HEADAS_LIB_DIR})
 install(
     TARGETS worker
     RUNTIME
@@ -134,7 +134,7 @@ nanobind_add_module(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/libxspex.cpp
 )
 target_link_libraries(libxspex PRIVATE includes ${LINK_LIBS})
-# set_target_properties(libxspex PROPERTIES INSTALL_RPATH ${HEADAS_LIB_DIR})
+set_target_properties(libxspex PROPERTIES INSTALL_RPATH ${HEADAS_LIB_DIR})
 install(
     TARGETS libxspex
     LIBRARY
