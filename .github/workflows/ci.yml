@@ -88,10 +88,45 @@ jobs:
             exit 1  # Exit with a non-zero status to fail the job
           fi
 
+  build:
+    name: Build Source Distribution
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: "3.13"
+
+      - name: Install XSPEC
+        run: |
+          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -U build twine
+
+      - name: Build and Check Source Distribution
+        run: |
+          python -m build --sdist .
+          python -m twine check --strict dist/*
+
+      - name: Upload Source Distribution as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xspex
+          path: dist/*
+
   tests:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    needs: download
+    needs: [ download, build ]
     strategy:
       matrix:
         include:
@@ -140,13 +175,18 @@ jobs:
           mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
           conda install --use-local ${{ needs.download.outputs.data-fn }} -y
 
+      - name: Download Source Distribution
+        uses: actions/download-artifact@v5
+        with:
+          name: xspex
+
       - name: Install Python Dependencies
         run: |
           uv pip compile pyproject.toml \
             --output-file requirements.txt \
             --resolution ${{ matrix.uv-resolution }}
           # Ensure build and runtime deps match
-          uv pip install ".[test]" \
+          uv pip install "$(ls xspex-*.tar.gz)[test]" \
             --overrides requirements.txt \
             --build-constraint requirements.txt \
             --verbose
@@ -172,41 +212,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
-
-  build:
-    name: Build Source Distribution
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Miniforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          python-version: "3.13"
-
-      - name: Install XSPEC
-        run: |
-          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
-
-      - name: Install Python Dependencies
-        run: |
-          pip install -U build twine
-
-      - name: Build and Check Source Distribution
-        run: |
-          python -m build --sdist .
-          python -m twine check --strict dist/*
-
-      - name: Upload Source Distribution as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: xspex
-          path: dist/*
 
   publish:
     name: Publish to PyPI
