@@ -1,6 +1,5 @@
 [project]
 name = "xspex"
-version = "0.1.1"
 description = "JAX interface for XSPEC spectral models."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -20,11 +19,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Astronomy",
+    "Typing :: Typed",
 ]
 dependencies = [
     "beautifulsoup4~=4.13.5",
     "jax>=0.6.0,<=0.7.1",
 ]
+dynamic = ["version"]
 
 [project.urls]
 Documentation = "https://github.com/wcxve/xspex#readme"
@@ -101,6 +102,7 @@ lint.select = [
 ]
 
 [tool.scikit-build]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 minimum-version = "build-system.requires"
 sdist.include = [
     "src",

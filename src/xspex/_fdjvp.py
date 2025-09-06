@@ -11,14 +11,20 @@ from jax.custom_derivatives import SymbolicZero
 from xspex._xspec.types import XspecModelType, XspecParamType
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from typing import Literal
+    from typing import Literal, TypedDict
 
     from numpy.typing import ArrayLike
 
+    from xspex._model import ConModelFn, ModelFn
     from xspex._xspec.types import XspecModel
 
-JNP_AT_KWS = {
+    class JNPAtKWS(TypedDict):
+        indices_are_sorted: bool
+        unique_indices: bool
+        mode: Literal['promise_in_bounds']
+
+
+JNP_AT_KWS: JNPAtKWS = {
     'indices_are_sorted': True,
     'unique_indices': True,
     'mode': 'promise_in_bounds',
@@ -26,12 +32,12 @@ JNP_AT_KWS = {
 
 
 def define_fdjvp(
-    fn: Callable,
+    fn: ModelFn | ConModelFn,
     model_info: XspecModel,
     fixed: ArrayLike | None = None,
     delta: float = 0.0,
     method: Literal['central', 'forward'] = 'central',
-) -> Callable:
+) -> ModelFn | ConModelFn:
     """Define the JVP using finite difference approximation.
 
     .. note::
