@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .types import (
     XspecFuncType,
@@ -12,6 +13,14 @@ from .types import (
     XspecParam,
     XspecParamType,
 )
+
+if TYPE_CHECKING:
+    from typing import TextIO, TypedDict
+
+    class ModelDescLink(TypedDict):
+        desc: str
+        link: str
+
 
 _P = {
     # start of line with optional whitespace characters
@@ -159,7 +168,7 @@ def get_spectral_path() -> str:
     return spectral_path.as_posix()
 
 
-def get_models_desc_and_link():
+def get_models_desc_and_link() -> dict[str, ModelDescLink]:
     """Parse XSPEC model description and link."""
     # import bs4 here to avoid import error when building the package
     from bs4 import BeautifulSoup
@@ -168,7 +177,7 @@ def get_models_desc_and_link():
 
     url = 'https://heasarc.gsfc.nasa.gov/docs/software/xspec/manual/XSmodel{}.html'
     html_path = spectral_path / 'help' / 'html'
-    model_info = {}
+    model_info: dict[str, ModelDescLink] = {}
     for mtype in [
         'Additive',
         'Multiplicative',
@@ -179,23 +188,23 @@ def get_models_desc_and_link():
         with open(html_path / f'{mtype}.html', encoding='utf-8') as f:
             s = BeautifulSoup(f.read(), 'html.parser')
 
-        for a in s.find_all('ul', class_='ChildLinks')[0].find_all('a'):
-            text = a.text
+        for a in s.find_all('ul', class_='ChildLinks')[0].find_all('a'):  # type: ignore
+            text = str(a.text)  # type: ignore
 
             # there is no ':' in agnslim model desc
             if mtype == 'Additive' and text.startswith('agnslim, AGN'):
                 text = text.replace('agnslim, AGN', 'agnslim: AGN')
 
             models, desc = text.split(':')
-            models = [m.strip() for m in models.split(',')]
+            models_list = [m.strip() for m in models.split(',')]
             desc = desc.strip()
             desc = re.sub(r'\s+', ' ', desc)
             if desc and desc[0].islower():
                 desc = desc[0].upper() + desc[1:]
             if not desc.endswith('.'):
                 desc += '.'
-            link = url.format(models[0].capitalize())
-            for m in models:
+            link = url.format(models_list[0].capitalize())
+            for m in models_list:
                 model_info[m.casefold()] = {'desc': desc, 'link': link}
 
     # There are typos in some models' names
@@ -251,13 +260,13 @@ def get_models_info(
     if parse_desc_and_link:
         model_desc_and_link = get_models_desc_and_link()
     else:
-        model_desc_and_link = {}
+        model_desc_and_link = None
 
     # The keys of models are formatted model names, i.e., the model names in
     # the XSPEC manual, which are lowercased and without underscores.
     # The values are the parsed models. The model has attr name, which is the
     # name in model.dat, and the corresponding C function in XSPEC is C_<name>.
-    models = {}
+    models: dict[str, XspecModel] = {}
 
     def format_name(name: str) -> str:
         """Format model name in model.dat to match that in the XSPEC manual."""
@@ -267,7 +276,7 @@ def get_models_info(
             name = name.replace('gaussian', 'gauss')
         return name
 
-    def parse_next_model(f) -> bool:
+    def parse_next_model(f: TextIO) -> bool:
         """Parse a model line from XSPEC model.dat file."""
         # read until a non-empty line is found, or EOF is reached
         while mline := f.readline():
@@ -297,7 +306,7 @@ def get_models_info(
             warnings.warn(f'extra string is not supported: {mline}')
 
         # parse parameters
-        parameters = []
+        parameters: list[XspecParam] = []
         for i in range(n_params):
             if not (pline := f.readline().strip()):
                 n_miss = n_params - i - 1
@@ -315,7 +324,14 @@ def get_models_info(
             parameters.append(p)
 
         mname_formatted = format_name(mname)
-        desc_and_link = model_desc_and_link.get(mname_formatted, {})
+
+        if model_desc_and_link is None:
+            desc = ''
+            link = ''
+        else:
+            desc_and_link = model_desc_and_link[mname_formatted]
+            desc = desc_and_link['desc']
+            link = desc_and_link['link']
 
         models[mname_formatted] = XspecModel(
             type=mtype,
@@ -323,8 +339,8 @@ def get_models_info(
             func=func,
             func_type=func_type,
             eps=eps,
-            desc=desc_and_link.get('desc', ''),
-            link=desc_and_link.get('link', ''),
+            desc=desc,
+            link=link,
             emin=emin,
             emax=emax,
             parameters=tuple(parameters),

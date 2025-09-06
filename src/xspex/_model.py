@@ -11,20 +11,48 @@ from xspex._xspec.model_parser import get_models_info
 from xspex._xspec.types import XspecModelType
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from typing import Protocol
 
     from xspex._xspec.types import XspecModel
+
+    class ModelFn(Protocol):
+        __name__: str
+        __qualname__: str
+        __doc__: str
+
+        def __call__(
+            self,
+            params: jax.Array,
+            egrid: jax.Array,
+            spec_num: int | jax.Array = 1,
+            init_string: str = '',
+        ) -> jax.Array: ...
+
+    class ConModelFn(Protocol):
+        __name__: str
+        __qualname__: str
+        __doc__: str
+
+        def __call__(
+            self,
+            params: jax.Array,
+            egrid: jax.Array,
+            input_model: jax.Array,
+            spec_num: int | jax.Array = 1,
+            init_string: str = '',
+        ) -> jax.Array: ...
+
 
 __all__ = ['get_model', 'list_models']
 
 FFI_TARGET_NAME_TEMPLATE = 'xspex_{name}'
 MODELS_INFO: dict[str, XspecModel] = get_models_info()
-MODELS: dict[str, Callable] = {}
+MODELS: dict[str, ModelFn | ConModelFn] = {}
 SUPPORTED_TYPES = (XspecModelType.Add, XspecModelType.Mul, XspecModelType.Con)
 XSPEC_VERSION: str = xspec_version()
 
 
-def get_model(name: str) -> tuple[Callable, XspecModel]:
+def get_model(name: str) -> tuple[ModelFn | ConModelFn, XspecModel]:
     """Get a XSPEC model function by name.
 
     Parameters
@@ -64,7 +92,7 @@ def list_models(mtype: str | None = None) -> list[str]:
         A list of XSPEC model names.
     """
     if mtype is None:
-        models = []
+        models: list[str] = []
         for t in SUPPORTED_TYPES:
             models.extend(list_models(t.name.lower()))
         return models
@@ -121,7 +149,7 @@ def generate_model_fn(
     name: str,
     n_params: int,
     is_convolution_model: bool,
-) -> Callable[..., jax.Array]:
+) -> ModelFn | ConModelFn:
     def fn_full_sigs(
         params: jax.Array,
         egrid: jax.Array,
@@ -243,14 +271,13 @@ def check_input(
             f'dtype {dtype}'
         )
 
-    if spec_num is not None:
-        if not (jnp.isscalar(spec_num) and jnp.dtype(spec_num) == jnp.int64):
-            shape = spec_num.shape
-            dtype = spec_num.dtype
-            raise ValueError(
-                f"XSPEC {model_name} model's spec_num must be a scalar of "
-                f'dtype int64, got shape {shape} and dtype {dtype}'
-            )
+    if not (jnp.isscalar(spec_num) and jnp.dtype(spec_num) == jnp.int64):
+        shape = spec_num.shape
+        dtype = spec_num.dtype
+        raise ValueError(
+            f"XSPEC {model_name} model's spec_num must be a scalar of "
+            f'dtype int64, got shape {shape} and dtype {dtype}'
+        )
 
     if input_model is not None:
         if not (
