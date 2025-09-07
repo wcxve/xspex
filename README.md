@@ -15,9 +15,10 @@ from [here](https://heasarc.gsfc.nasa.gov/lheasoft/),
 or install
 from [conda](https://heasarc.gsfc.nasa.gov/docs/software/conda.html).
 
-After initializing ``HEADAS`` environment, you can install ``xspex`` with:
+Once the ``HEADAS`` environment has been initialized, ``xspex`` can be
+installed directly from PyPI using:
 
-```shell
+```console
 pip install xspex
 ```
 
