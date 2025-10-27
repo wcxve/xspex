@@ -179,7 +179,7 @@ jobs:
           conda install --use-local ${{ needs.download.outputs.data-fn }} -y
 
       - name: Download Source Distribution
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: xspex
 
@@ -228,7 +228,7 @@ jobs:
       id-token: write
     steps:
       - name: Download Source Distribution
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: xspex
           path: dist
