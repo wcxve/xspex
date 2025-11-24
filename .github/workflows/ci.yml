@@ -99,7 +99,7 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -155,7 +155,7 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Cache XSPEC Model Data
         uses: actions/cache@v4
