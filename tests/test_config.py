@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 from numpy.testing import assert_allclose
-from xspec import Xset
 
 import xspex as xx
+from xspec import Xset
 
 from .conftest import XSPEC_ABUND_TABLES, XSPEC_XSECT_TABLES
 
@@ -228,18 +228,15 @@ def test_mstr():
         8. The database returns to its initial baseline after clearing
 
     """
-    expected_base = dict(Xset.modelStrings)
+    expected_mstr = dict(Xset.modelStrings)
 
-    # Get all model strings (should contain the XSPEC version keys initially)
-    all_mstr = xx.mstr()
-    for key, value in expected_base.items():
-        assert all_mstr[key] == value
+    # Remove CFLOW_NTEMPS, which is added when evaluating cflow model.
+    expected_mstr.pop('CFLOW_NTEMPS', None)
+
+    # Initial model strings should be the same
+    assert xx.mstr() == expected_mstr
 
     try:
-        # Clear all model strings first
-        xx.clear_mstr()
-        assert xx.mstr() == expected_base
-
         # Test setting single model string
         test_key = 'test_key'
         test_value = 'test_value'
@@ -268,12 +265,13 @@ def test_mstr():
         xx.mstr('key1', 'new_value1')
         assert xx.mstr('key1') == 'new_value1'
 
-    finally:
         # Clear all model strings
         xx.clear_mstr()
+        assert xx.mstr() == {}
 
-        # Database should contain only the built-in version keys
-        assert xx.mstr() == expected_base
+    finally:
+        # Restore initial model string
+        xx.mstr(expected_mstr)
 
 
 def test_xflt():
