@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 from numpy.testing import assert_allclose
+from xspec import Xset
 
 import xspex as xx
-from xspec import Xset
 
 from .conftest import XSPEC_ABUND_TABLES, XSPEC_XSECT_TABLES
 
