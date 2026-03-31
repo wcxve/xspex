@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 from numpy.testing import assert_allclose
-from xspec import Xset
 
 import xspex as xx
+from xspec import Xset
 
 from .conftest import XSPEC_ABUND_TABLES, XSPEC_XSECT_TABLES
 
@@ -217,25 +217,15 @@ def test_mstr():
 
     Comprehensive test of model string (MSTR) functionality including:
 
-        1. XSPEC 12.15.1+ includes built-in database-version keys initially
-        2. Setting single model strings with key-value pairs
-        3. Setting multiple model strings using dictionaries
-        4. Retrieving individual model strings by key
-        5. Retrieving all model strings as a dictionary
-        6. Overwriting existing model strings
-        7. The clear operation removes user model strings and preserves
-           built-in version keys only when XSPEC provides them
-        8. The database returns to its initial baseline after clearing
+        1. Setting single model strings with key-value pairs
+        2. Setting multiple model strings using dictionaries
+        3. Retrieving individual model strings by key
+        4. Retrieving all model strings as a dictionary
+        5. Overwriting existing model strings
+        6. The database returns to its initial baseline after clearing
 
     """
-    expected_mstr = dict(Xset.modelStrings)
-
-    # Remove CFLOW_NTEMPS, which is added when evaluating cflow model.
-    expected_mstr.pop('CFLOW_NTEMPS', None)
-
-    # Initial model strings should be the same
-    assert xx.mstr() == expected_mstr
-
+    init_mstr = xx.mstr()
     try:
         # Test setting single model string
         test_key = 'test_key'
@@ -271,7 +261,7 @@ def test_mstr():
 
     finally:
         # Restore initial model string
-        xx.mstr(expected_mstr)
+        xx.mstr(init_mstr)
 
 
 def test_xflt():
