@@ -26,8 +26,25 @@ if TYPE_CHECKING:
 
 N_DEVICES = len(jax.devices())
 N_BATCHES = 2
+
+
+def make_batch_mesh():
+    """Build a mesh without triggering the JAX axis_types deprecation."""
+    axis_names = ('device', 'batch')
+    try:
+        from jax.sharding import AxisType
+
+        return jax.make_mesh(
+            (N_DEVICES, 1),
+            axis_names,
+            axis_types=(AxisType.Auto,) * len(axis_names),
+        )
+    except (ImportError, TypeError):
+        return jax.make_mesh((N_DEVICES, 1), axis_names)
+
+
 SHARDING = NamedSharding(
-    jax.make_mesh((N_DEVICES, 1), ('device', 'batch')),
+    make_batch_mesh(),
     P('device', 'batch'),
 )
 REL_DELTA = 0.2

@@ -164,7 +164,7 @@ def define_fdjvp(
         idx = np.flatnonzero(~static_mask)
 
         if not idx.size:
-            tangent_out = jax.lax.zeros_like_array(primal_out)
+            tangent_out = jnp.zeros_like(primal_out)
             return primal_out, tangent_out
 
         if use_rel_step:
