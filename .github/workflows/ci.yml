@@ -105,7 +105,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install XSPEC
         run: |
@@ -133,21 +133,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Tests (Python 3.13 on Linux-x64)
+          - name: Tests (Python 3.14 on Linux-x64)
             os: "ubuntu-latest"
-            python-version: "3.13"
+            python-version: "3.14"
             uv-resolution: "highest"
             parallel_cpu: "1"
 
-          - name: Tests (Python 3.13 on macOS-arm64)
+          - name: Tests (Python 3.14 on macOS-arm64)
             os: "macos-latest"
-            python-version: "3.13"
+            python-version: "3.14"
             uv-resolution: "highest"
             parallel_cpu: "2"
 
           - name: Tests (Lowest Version Deps)
             os: "ubuntu-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             uv-resolution: "lowest-direct"
             parallel_cpu: "1"
     defaults:
