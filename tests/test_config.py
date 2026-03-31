@@ -217,24 +217,16 @@ def test_mstr():
 
     Comprehensive test of model string (MSTR) functionality including:
 
-        1. The database is empty initially
-        2. Setting single model strings with key-value pairs
-        3. Setting multiple model strings using dictionaries
-        4. Retrieving individual model strings by key
-        5. Retrieving all model strings as a dictionary
-        6. Overwriting existing model strings
-        7. The clear operation removes all model strings
-        8. The database is empty after clearing
+        1. Setting single model strings with key-value pairs
+        2. Setting multiple model strings using dictionaries
+        3. Retrieving individual model strings by key
+        4. Retrieving all model strings as a dictionary
+        5. Overwriting existing model strings
+        6. The database returns to its initial baseline after clearing
 
     """
-    # Get all model strings (should return empty dict initially)
-    all_mstr = xx.mstr()
-    assert all_mstr == {}
-
+    init_mstr = xx.mstr()
     try:
-        # Clear all model strings first
-        xx.clear_mstr()
-
         # Test setting single model string
         test_key = 'test_key'
         test_value = 'test_value'
@@ -263,12 +255,13 @@ def test_mstr():
         xx.mstr('key1', 'new_value1')
         assert xx.mstr('key1') == 'new_value1'
 
-    finally:
         # Clear all model strings
         xx.clear_mstr()
-
-        # Database should be empty after clearing
         assert xx.mstr() == {}
+
+    finally:
+        # Restore initial model string
+        xx.mstr(init_mstr)
 
 
 def test_xflt():
