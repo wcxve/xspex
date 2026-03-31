@@ -6,10 +6,10 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+import xspec
 from jax.sharding import NamedSharding, PartitionSpec as P
 from numpy.testing import assert_allclose
 
-import xspec
 import xspex as xx
 from xspex._xspec.types import XspecModelType
 
