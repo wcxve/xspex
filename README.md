@@ -22,6 +22,8 @@ installed directly from PyPI using:
 pip install xspex
 ```
 
+``xspex`` currently supports Python 3.11 through 3.14.
+
 ## Examples
 
 ### Basic Usage
