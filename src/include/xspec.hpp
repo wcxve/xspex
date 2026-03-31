@@ -16,6 +16,7 @@
 // clang-format on
 
 #include "mdef.hpp"
+#include "xspec_dbversion.hpp"
 
 namespace xspex::xspec
 {
@@ -89,6 +90,9 @@ inline void initialize_xspec_model_library()
     try {
         // Initialize XSPEC model library
         FNINIT();
+        // Resolve "latest" database version aliases for older XSPEC builds
+        // where FNINIT stores the keyword verbatim in the model string DB.
+        normalize_database_versions();
         // Initialize the Cosmology settings
         initialize_xspec_cosmology();
         // Clear all XFLT values

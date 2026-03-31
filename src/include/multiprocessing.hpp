@@ -394,7 +394,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.atomdb_version.version(version);
-        return xspec_config(Task::SyncAtomDBVersionFromShmem);
+        const auto status = xspec_config(Task::SyncAtomDBVersionFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     [[nodiscard]] std::string spex_version() const noexcept
@@ -407,7 +411,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.spex_version.version(version);
-        return xspec_config(Task::SyncSPEXVersionFromShmem);
+        const auto status = xspec_config(Task::SyncSPEXVersionFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     [[nodiscard]] std::string nei_version() const noexcept
@@ -420,7 +428,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.nei_version.version(version);
-        return xspec_config(Task::SyncNEIVersionFromShmem);
+        const auto status = xspec_config(Task::SyncNEIVersionFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     // Get single model string
@@ -441,7 +453,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.mstr(key, value);
-        return xspec_config(Task::SyncModelStringFromShmem);
+        const auto status = xspec_config(Task::SyncModelStringFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     TaskStatus mstr(const config::xspec::MStrMap& map) noexcept
@@ -449,7 +465,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.mstr(map);
-        return xspec_config(Task::SyncModelStringFromShmem);
+        const auto status = xspec_config(Task::SyncModelStringFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     // Clear model string
@@ -458,7 +478,11 @@ class WorkerProcessPool
         std::lock_guard<std::mutex> lock(*mtx_.at(-1));
         backup_xspec_config();
         xspec_config_manager_.mstr.clear();
-        return xspec_config(Task::SyncModelStringFromShmem);
+        const auto status = xspec_config(Task::SyncModelStringFromShmem);
+        if (!status.first) {
+            return status;
+        }
+        return xspec_config(Task::SyncConfigToShmem);
     }
 
     // Get XFLT entries for a given spectrum number

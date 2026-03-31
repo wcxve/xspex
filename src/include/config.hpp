@@ -25,6 +25,7 @@
 #include "constant.hpp"
 #include "shmem.hpp"
 #include "utils.hpp"
+#include "xspec_dbversion.hpp"
 
 namespace xspex::config::xspec
 {
@@ -474,7 +475,11 @@ class AtomDBVersionWrapper : public XspecAtomDBVersionWrapper
 
     void do_sync_from_shmem() override
     {
-        FunctionUtility::atomdbVersion(shmem_->version);
+        FunctionUtility::atomdbVersion(::xspex::xspec::resolve_database_version(
+            shmem_->version, ::xspex::xspec::atomdb_version_spec));
+        utils::copy_string(FunctionUtility::atomdbVersion(),
+                           shmem_->version,
+                           constant::version_length);
     }
 
     [[nodiscard]] std::string xspec_config_string() const noexcept override
@@ -525,7 +530,11 @@ class SPEXVersionWrapper : public SPEXVersionWrapper_
 
     void do_sync_from_shmem() override
     {
-        FunctionUtility::spexVersion(shmem_->version);
+        FunctionUtility::spexVersion(::xspex::xspec::resolve_database_version(
+            shmem_->version, ::xspex::xspec::spex_version_spec));
+        utils::copy_string(FunctionUtility::spexVersion(),
+                           shmem_->version,
+                           constant::version_length);
     }
 
     [[nodiscard]] std::string xspec_config_string() const noexcept override
@@ -576,7 +585,11 @@ class NEIVersionWrapper : public XspecNEIVersionWrapper
 
     void do_sync_from_shmem() override
     {
-        FunctionUtility::neiVersion(shmem_->version);
+        FunctionUtility::neiVersion(::xspex::xspec::resolve_database_version(
+            shmem_->version, ::xspex::xspec::nei_version_spec));
+        utils::copy_string(FunctionUtility::neiVersion(),
+                           shmem_->version,
+                           constant::version_length);
     }
 
     [[nodiscard]] std::string xspec_config_string() const noexcept override
@@ -687,7 +700,13 @@ class MStrWrapper : public XspecMStrWrapper
 
     void do_sync_from_shmem() override
     {
+        const auto atomdb_version = FunctionUtility::atomdbVersion();
+        const auto spex_version = FunctionUtility::spexVersion();
+        const auto nei_version = FunctionUtility::neiVersion();
         FunctionUtility::eraseModelStringDataBase();
+        FunctionUtility::atomdbVersion(atomdb_version);
+        FunctionUtility::spexVersion(spex_version);
+        FunctionUtility::neiVersion(nei_version);
         for (uint32_t i = 0; i < shmem_->size; ++i) {
             FunctionUtility::setModelString(shmem_->entries[i].key,
                                             shmem_->entries[i].value);

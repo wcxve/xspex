@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 from numpy.testing import assert_allclose
-from xspec import Xset
 
 import xspex as xx
+from xspec import Xset
 
 from .conftest import XSPEC_ABUND_TABLES, XSPEC_XSECT_TABLES
 
@@ -217,23 +217,28 @@ def test_mstr():
 
     Comprehensive test of model string (MSTR) functionality including:
 
-        1. The database is empty initially
+        1. XSPEC 12.15.1+ includes built-in database-version keys initially
         2. Setting single model strings with key-value pairs
         3. Setting multiple model strings using dictionaries
         4. Retrieving individual model strings by key
         5. Retrieving all model strings as a dictionary
         6. Overwriting existing model strings
-        7. The clear operation removes all model strings
-        8. The database is empty after clearing
+        7. The clear operation removes user model strings and preserves
+           built-in version keys only when XSPEC provides them
+        8. The database returns to its initial baseline after clearing
 
     """
-    # Get all model strings (should return empty dict initially)
+    expected_base = dict(Xset.modelStrings)
+
+    # Get all model strings (should contain the XSPEC version keys initially)
     all_mstr = xx.mstr()
-    assert all_mstr == {}
+    for key, value in expected_base.items():
+        assert all_mstr[key] == value
 
     try:
         # Clear all model strings first
         xx.clear_mstr()
+        assert xx.mstr() == expected_base
 
         # Test setting single model string
         test_key = 'test_key'
@@ -267,8 +272,8 @@ def test_mstr():
         # Clear all model strings
         xx.clear_mstr()
 
-        # Database should be empty after clearing
-        assert xx.mstr() == {}
+        # Database should contain only the built-in version keys
+        assert xx.mstr() == expected_base
 
 
 def test_xflt():
