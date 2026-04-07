@@ -66,12 +66,12 @@ inline std::string resolve_database_version(const std::string& version,
         if (!default_version.empty()) {
             return default_version;
         }
-        std::ostringstream oss;
-        oss << "failed to resolve latest value for " << spec.setting_key
+        std::cerr
+            << "failed to resolve latest value for " << spec.setting_key
             << ": \"" << latest_path
             << "\" is missing and Xspec.init does not provide a concrete "
                "version";
-        throw std::runtime_error(oss.str());
+        return {};
     }
 
     const auto expected_key = std::string(spec.setting_key) + ":";
@@ -83,29 +83,31 @@ inline std::string resolve_database_version(const std::string& version,
         }
     }
 
-    std::ostringstream oss;
-    oss << "failed to resolve latest value for " << spec.setting_key
-        << " from \"" << latest_path << "\"";
-    throw std::runtime_error(oss.str());
+    std::cerr << "failed to resolve latest value for " << spec.setting_key
+              << " from \"" << latest_path << "\"";
+    return {};
 }
 
 inline void normalize_database_versions()
 {
-    const auto atomdb_version = resolve_database_version(
-        FunctionUtility::atomdbVersion(), atomdb_version_spec);
-    if (atomdb_version != FunctionUtility::atomdbVersion()) {
+    const auto current_atomdb_version = FunctionUtility::atomdbVersion();
+    const auto atomdb_version =
+        resolve_database_version(current_atomdb_version, atomdb_version_spec);
+    if (!atomdb_version.empty() && atomdb_version != current_atomdb_version) {
         FunctionUtility::atomdbVersion(atomdb_version);
     }
 
-    const auto spex_version = resolve_database_version(
-        FunctionUtility::spexVersion(), spex_version_spec);
-    if (spex_version != FunctionUtility::spexVersion()) {
+    const auto current_spex_version = FunctionUtility::spexVersion();
+    const auto spex_version =
+        resolve_database_version(current_spex_version, spex_version_spec);
+    if (!spex_version.empty() && spex_version != current_spex_version) {
         FunctionUtility::spexVersion(spex_version);
     }
 
-    const auto nei_version = resolve_database_version(
-        FunctionUtility::neiVersion(), nei_version_spec);
-    if (nei_version != FunctionUtility::neiVersion()) {
+    const auto current_nei_version = FunctionUtility::neiVersion();
+    const auto nei_version =
+        resolve_database_version(current_nei_version, nei_version_spec);
+    if (!nei_version.empty() && nei_version != current_nei_version) {
         FunctionUtility::neiVersion(nei_version);
     }
 }
