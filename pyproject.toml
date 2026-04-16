@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4>=4.13.5,<4.15.0",
-    "jax>=0.6.0,<=0.9.2",
+    "jax>=0.6.0,<=0.10.0",
 ]
 dynamic = ["version"]
 
@@ -43,7 +43,7 @@ test = [
 
 [build-system]
 requires = [
-    "jax>=0.6.0,<=0.9.2",
+    "jax>=0.6.0,<=0.10.0",
     "nanobind>=2.12.0",
     "scikit-build-core>=0.12.2",
 ]
