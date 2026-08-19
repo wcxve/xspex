@@ -63,13 +63,7 @@ _MODEL_PATTERN = re.compile(
         '{s}{S}'  # model function name
         '{s}{m}'  # model type
         '{s}{b}'  # flag of whether the model calculates errors
-        '(?:'  # optional model settings
-        '{s}{b}'  # flag of whether the model is data dependent
-        '(?:'  # initialization string and extra string
-        '{s}{S}'  # initialization string
-        '(?:{s}{a})?'  # extra string is not used in XSPEC
-        ')?'
-        ')?'
+        '(?:{s}{a})?'  # optional model settings
         '{$}'
     )
     .format_map(_P)
@@ -80,11 +74,33 @@ _MODEL_PATTERN = re.compile(
         'emax',
         'func',
         'calc_errors',
+        'settings',
+    )
+)
+
+# pattern for legacy model settings
+_MODEL_SETTINGS_PATTERN = re.compile(
+    pattern=(
+        '{^}'
+        '(?:'
+        '{b}'  # flag of whether the model is data dependent
+        '(?:'  # initialization string and extra string
+        '{s}{S}'  # initialization string
+        '(?:{s}{a})?'  # extra string is not used in XSPEC
+        ')?'
+        ')?'
+        '{$}'
+    )
+    .format_map(_P)
+    .format(
         'data_depend',
         'init_string',
         'extra_string',
     )
 )
+
+# XSPEC 13 adds optional analytic gradient metadata to model definitions.
+_GRADIENT_SETTING_PATTERN = re.compile(r'(?:^|\s+)grad=(?:g|gv)(?::\S+)?$')
 
 # pattern for default parameter line
 _DEFAULT_PARAMETER_PATTERN = re.compile(
@@ -234,6 +250,22 @@ def get_model_file() -> str:
     return modelfile.resolve(strict=True).as_posix()
 
 
+def _parse_model_settings(settings: str, mline: str) -> tuple[bool, str, str]:
+    """Parse model settings, ignoring XSPEC 13 gradient metadata."""
+    settings = settings.strip()
+    if match := _GRADIENT_SETTING_PATTERN.search(settings):
+        settings = settings[: match.start()].strip()
+
+    match = _MODEL_SETTINGS_PATTERN.match(settings)
+    if match is None:
+        raise ValueError(f'invalid model definition: {mline}')
+
+    data_depend = match.group('data_depend') not in (None, '0')
+    init_string = match.group('init_string') or ''
+    extra_string = match.group('extra_string') or ''
+    return data_depend, init_string, extra_string
+
+
 def get_models_info(
     model_file: str | None = None,
     parse_desc_and_link: bool = True,
@@ -299,9 +331,10 @@ def get_models_info(
         emin = float(match.group('emin'))
         emax = float(match.group('emax'))
         calc_errors = match.group('calc_errors') not in (None, '0')
-        data_depend = match.group('data_depend') not in (None, '0')
-        init_string = match.group('init_string') or ''
-        extra_string = match.group('extra_string') or ''
+        data_depend, init_string, extra_string = _parse_model_settings(
+            match.group('settings') or '',
+            mline,
+        )
         if extra_string:
             warnings.warn(f'extra string is not supported: {mline}')
 

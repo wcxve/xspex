@@ -109,7 +109,7 @@ jobs:
 
       - name: Install XSPEC
         run: |
-          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
+          mamba install "xspec=13.*" -c $HEASARC_CHANNEL -c conda-forge -y
 
       - name: Install Python Dependencies
         run: |
@@ -136,18 +136,21 @@ jobs:
           - name: Tests (Python 3.14 on Linux-x64)
             os: "ubuntu-latest"
             python-version: "3.14"
+            xspec-version: "13.*"
             uv-resolution: "highest"
             parallel_cpu: "1"
 
           - name: Tests (Python 3.14 on macOS-arm64)
             os: "macos-latest"
             python-version: "3.14"
+            xspec-version: "13.*"
             uv-resolution: "highest"
             parallel_cpu: "2"
 
           - name: Tests (Lowest Version Deps)
             os: "ubuntu-latest"
             python-version: "3.11"
+            xspec-version: "12.15.*"
             uv-resolution: "lowest-direct"
             parallel_cpu: "1"
     defaults:
@@ -175,7 +178,7 @@ jobs:
 
       - name: Install XSPEC
         run: |
-          mamba install xspec -c $HEASARC_CHANNEL -c conda-forge -y
+          mamba install "xspec=${{ matrix.xspec-version }}" -c $HEASARC_CHANNEL -c conda-forge -y
           conda install --use-local ${{ needs.download.outputs.data-fn }} -y
 
       - name: Download Source Distribution
