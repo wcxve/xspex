@@ -186,6 +186,15 @@ def get_spectral_path() -> str:
     return spectral_path.as_posix()
 
 
+def _format_model_name(name: str) -> str:
+    """Normalize a model name for lookup across XSPEC data sources."""
+    name = name.casefold()
+    name = name.replace('_', '')
+    if name.endswith('gaussian'):
+        name = name.replace('gaussian', 'gauss')
+    return name
+
+
 def get_models_desc_and_link() -> dict[str, ModelDescLink]:
     """Parse XSPEC model description and link."""
     # import bs4 here to avoid import error when building the package
@@ -196,24 +205,61 @@ def get_models_desc_and_link() -> dict[str, ModelDescLink]:
     url = 'https://heasarc.gsfc.nasa.gov/docs/software/xspec/manual/XSmodel{}.html'
     html_path = spectral_path / 'help' / 'html'
     model_info: dict[str, ModelDescLink] = {}
-    for mtype in [
-        'Additive',
-        'Multiplicative',
-        'Convolution',
-        'Pileup',
-        'Mixing',
-    ]:
-        with open(html_path / f'{mtype}.html', encoding='utf-8') as f:
+    model_categories = {
+        'Additive': 'Additive Model Components',
+        'Multiplicative': 'Multiplicative Model Components',
+        'Convolution': 'Convolution Model Components',
+        'Pileup': 'Pile-Up Model Components',
+        'Mixing': 'Mixing Model Components',
+    }
+    for mtype, category_title in model_categories.items():
+        category_path = html_path / f'{mtype}.html'
+        with open(category_path, encoding='utf-8') as f:
             s = BeautifulSoup(f.read(), 'html.parser')
 
-        for a in s.find_all('ul', class_='ChildLinks')[0].find_all('a'):  # type: ignore
+        child_links = s.find('ul', class_='ChildLinks')
+        if child_links is None:
+            # XSPEC 13.0.0 conda packages contain stale category symlinks.
+            # Resolve the actual category page from the manual contents.
+            contents_path = html_path / 'node1.html'
+            with open(contents_path, encoding='utf-8') as f:
+                contents = BeautifulSoup(f.read(), 'html.parser')
+
+            category_link = next(
+                (
+                    a
+                    for a in contents.find_all('a')
+                    if a.get_text(' ', strip=True) == category_title
+                ),
+                None,
+            )
+            if category_link is None or not category_link.get('href'):
+                raise ValueError(
+                    f'XSPEC model category not found in {contents_path}: '
+                    f'{category_title}'
+                )
+
+            category_path = html_path / str(category_link['href'])
+            with open(category_path, encoding='utf-8') as f:
+                s = BeautifulSoup(f.read(), 'html.parser')
+            child_links = s.find('ul', class_='ChildLinks')
+
+        if child_links is None:
+            raise ValueError(f'XSPEC model links not found in {category_path}')
+
+        for a in child_links.find_all('a'):
             text = str(a.text)  # type: ignore
 
             # there is no ':' in agnslim model desc
             if mtype == 'Additive' and text.startswith('agnslim, AGN'):
                 text = text.replace('agnslim, AGN', 'agnslim: AGN')
 
-            models, desc = text.split(':')
+            # XSPEC 13.0.0 lists non-model subsections under Mixing without
+            # the colon that separates model names from their description.
+            if ':' not in text:
+                continue
+
+            models, desc = text.split(':', maxsplit=1)
             models_list = [m.strip() for m in models.split(',')]
             desc = desc.strip()
             desc = re.sub(r'\s+', ' ', desc)
@@ -223,7 +269,10 @@ def get_models_desc_and_link() -> dict[str, ModelDescLink]:
                 desc += '.'
             link = url.format(models_list[0].capitalize())
             for m in models_list:
-                model_info[m.casefold()] = {'desc': desc, 'link': link}
+                model_info[_format_model_name(m)] = {
+                    'desc': desc,
+                    'link': link,
+                }
 
     # There are typos in some models' names
     if 'bvvcie' not in model_info and 'bbvcie' in model_info:
@@ -302,14 +351,6 @@ def get_models_info(
     # name in model.dat, and the corresponding C function in XSPEC is C_<name>.
     models: dict[str, XspecModel] = {}
 
-    def format_name(name: str) -> str:
-        """Format model name in model.dat to match that in the XSPEC manual."""
-        name = name.casefold()
-        name = name.replace('_', '')
-        if name.endswith('gaussian'):
-            name = name.replace('gaussian', 'gauss')
-        return name
-
     def parse_next_model(f: TextIO) -> bool:
         """Parse a model line from XSPEC model.dat file."""
         # read until a non-empty line is found, or EOF is reached
@@ -358,7 +399,7 @@ def get_models_info(
 
             parameters.append(p)
 
-        mname_formatted = format_name(mname)
+        mname_formatted = _format_model_name(mname)
 
         if model_desc_and_link is None:
             desc = ''
