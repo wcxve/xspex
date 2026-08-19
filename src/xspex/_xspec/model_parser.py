@@ -99,7 +99,9 @@ _MODEL_SETTINGS_PATTERN = re.compile(
     )
 )
 
-# XSPEC 13 adds optional analytic gradient metadata to model definitions.
+# XSPEC 13.0.0 adds optional trailing analytic-gradient metadata to model
+# definitions. These are the forms observed in its bundled model.dat. Keep
+# unknown trailing settings invalid so changes in later releases are reviewed.
 _GRADIENT_SETTING_PATTERN = re.compile(r'(?:^|\s+)grad=(?:g|gv)(?::\S+)?$')
 
 # pattern for default parameter line
@@ -251,7 +253,7 @@ def get_model_file() -> str:
 
 
 def _parse_model_settings(settings: str, mline: str) -> tuple[bool, str, str]:
-    """Parse model settings, ignoring XSPEC 13 gradient metadata."""
+    """Parse model settings, ignoring XSPEC 13.0.0 gradient metadata."""
     settings = settings.strip()
     if match := _GRADIENT_SETTING_PATTERN.search(settings):
         settings = settings[: match.start()].strip()

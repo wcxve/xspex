@@ -28,7 +28,7 @@ def _parse_model(tmp_path: Path, settings: str = ''):
         'grad=gv:testGradient,testVJP',
     ],
 )
-def test_parse_xspec_13_gradient_setting(tmp_path: Path, gradient: str):
+def test_parse_xspec_13_0_0_gradient_setting(tmp_path: Path, gradient: str):
     model = _parse_model(tmp_path, f' {gradient}')
 
     assert model.data_depend is False
@@ -39,7 +39,7 @@ def test_parse_xspec_13_gradient_setting(tmp_path: Path, gradient: str):
     ('data_depend', 'expected'),
     [('0', False), ('1', True)],
 )
-def test_gradient_setting_after_data_depend(
+def test_xspec_13_0_0_gradient_setting_after_data_depend(
     tmp_path: Path,
     data_depend: str,
     expected: bool,
