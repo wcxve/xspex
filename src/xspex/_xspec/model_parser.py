@@ -180,7 +180,18 @@ def get_spectral_path() -> str:
         alt_path = Path(HEADAS) / 'spectral'
         alt_path = alt_path.resolve()
         if alt_path.exists() and alt_path.is_dir():
-            spectral_path.symlink_to(target=alt_path, target_is_directory=True)
+            try:
+                spectral_path.symlink_to(
+                    target=alt_path, target_is_directory=True
+                )
+            except FileExistsError:
+                # Another process may have created the expected link after
+                # the existence check above.
+                if (
+                    not spectral_path.is_symlink()
+                    or spectral_path.resolve() != alt_path
+                ):
+                    raise
         else:
             raise OSError('XSPEC spectral directory not found')
     return spectral_path.as_posix()
