@@ -20,6 +20,64 @@ def _parse_model(tmp_path: Path, settings: str = ''):
     )['test']
 
 
+def test_get_spectral_path_accepts_matching_link_created_by_peer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    headas = tmp_path / 'headas'
+    alt_path = headas / 'spectral'
+    alt_path.mkdir(parents=True)
+    spectral_path = (tmp_path / 'spectral').resolve()
+    original_symlink_to = Path.symlink_to
+
+    def peer_create_link(
+        path: Path,
+        target: Path,
+        target_is_directory: bool = False,
+    ):
+        original_symlink_to(
+            path,
+            target,
+            target_is_directory=target_is_directory,
+        )
+        raise FileExistsError
+
+    monkeypatch.setenv('HEADAS', headas.as_posix())
+    monkeypatch.setattr(Path, 'symlink_to', peer_create_link)
+
+    assert model_parser.get_spectral_path() == spectral_path.as_posix()
+
+
+def test_get_spectral_path_rejects_wrong_link_created_by_peer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    headas = tmp_path / 'headas'
+    alt_path = headas / 'spectral'
+    alt_path.mkdir(parents=True)
+    wrong_path = tmp_path / 'wrong-spectral'
+    wrong_path.mkdir()
+    original_symlink_to = Path.symlink_to
+
+    def peer_create_wrong_link(
+        path: Path,
+        target: Path,
+        target_is_directory: bool = False,
+    ):
+        original_symlink_to(
+            path,
+            wrong_path,
+            target_is_directory=target_is_directory,
+        )
+        raise FileExistsError
+
+    monkeypatch.setenv('HEADAS', headas.as_posix())
+    monkeypatch.setattr(Path, 'symlink_to', peer_create_wrong_link)
+
+    with pytest.raises(FileExistsError):
+        model_parser.get_spectral_path()
+
+
 def test_xspec_13_0_0_help_category_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
