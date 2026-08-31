@@ -95,11 +95,13 @@ print(jacobian)
 
 ```python
 # Create multiple parameter sets
-param_sets = jnp.array([
-    [0.5, 1.0, 0.0],
-    [1.0, 1.0, 0.0],
-    [2.0, 1.0, 0.0],
-])
+param_sets = jnp.array(
+    [
+        [0.5, 1.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [2.0, 1.0, 0.0],
+    ]
+)
 
 # Vectorize the function
 vmapped_fn = jax.vmap(fn, in_axes=(0, None))
@@ -115,10 +117,12 @@ print(results)
 
 ```python
 # Replicate parameters across devices
-param_sets = jnp.array([
-    [1.0, 1.0, 0.0],
-    [2.0, 1.0, 0.0],
-])
+param_sets = jnp.array(
+    [
+        [1.0, 1.0, 0.0],
+        [2.0, 1.0, 0.0],
+    ]
+)
 
 pmapped_fn = jax.pmap(fn, in_axes=(0, None))
 results = pmapped_fn(param_sets, egrid)
@@ -138,6 +142,6 @@ fn2 = xx.define_fdjvp(  # see the docstring for more details
     info,
     delta=1e-6,  # Custom step size (relative to parameter value)
     method='central',  # 'central' or 'forward' finite differences
-    fixed=None  # Optional: specify which parameters to keep fixed
+    fixed=None,  # Optional: specify which parameters to keep fixed
 )
 ```
